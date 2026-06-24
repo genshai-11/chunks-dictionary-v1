@@ -149,9 +149,6 @@ function loadFallbackLocalStores() {
   }
 }
 
-// Call the async initialization
-initFirestoreStore();
-
 // Update/Save helpers for Firestore
 async function saveEntryToFirestore(entry: DictionaryEntry) {
   if (db) {
@@ -1409,6 +1406,8 @@ dictionaryRouter.post("/chunk-generate/batch", async (req, res) => {
 // ==========================================
 
 const startServer = async () => {
+  await initFirestoreStore();
+
   // Statically serve the physical workspace assets directory
   app.use("/assets", express.static(path.join(process.cwd(), "assets")));
 
