@@ -44,6 +44,10 @@ export default function TeacherDashboard9RouterSettings() {
   const [useCustomSTT, setUseCustomSTT] = useState(() => {
     return localStorage.getItem("ninerouter_use_custom_stt") === "true";
   });
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(() => {
+    const stored = Number(localStorage.getItem("ninerouter_playback_speed") || "1");
+    return Number.isFinite(stored) && stored > 0 ? stored : 1.0;
+  });
 
   // Password visibility
   const [showApiKey, setShowApiKey] = useState(false);
@@ -115,6 +119,7 @@ export default function TeacherDashboard9RouterSettings() {
   const llmOptions = discoveredLLM.length > 0 ? discoveredLLM : defaultLLMs;
   const sttOptions = discoveredSTT.length > 0 ? discoveredSTT : defaultSTTs;
   const ttsOptions = discoveredTTS.length > 0 ? discoveredTTS : defaultTTSs;
+  const playbackSpeedOptions = [0.8, 0.9, 1.0, 1.1, 1.2, 1.5];
 
   // Save changes to localStorage with animation
   const handleSaveSettings = () => {
@@ -128,6 +133,7 @@ export default function TeacherDashboard9RouterSettings() {
       localStorage.setItem("ninerouter_tts_model", ttsModel.trim());
       localStorage.setItem("ninerouter_tts_vietnamese_model", ttsVietnameseModel.trim());
       localStorage.setItem("ninerouter_use_custom_stt", String(useCustomSTT));
+      localStorage.setItem("ninerouter_playback_speed", String(playbackSpeed));
 
       // Also dispatch an event so standard search/TTS button components are updated instantly!
       window.dispatchEvent(new Event("ninerouter_settings_updated"));
@@ -252,6 +258,7 @@ export default function TeacherDashboard9RouterSettings() {
         audioRef.current.pause();
         setIsPlayingTestAudio(false);
       } else {
+        audioRef.current.playbackRate = playbackSpeed;
         audioRef.current.play().catch((e) => {
           console.error(e);
           setTtsTestError("Không thể phát âm thanh: " + e.message);
@@ -263,11 +270,12 @@ export default function TeacherDashboard9RouterSettings() {
 
   useEffect(() => {
     if (audioRef.current) {
+      audioRef.current.playbackRate = playbackSpeed;
       audioRef.current.onended = () => {
         setIsPlayingTestAudio(false);
       };
     }
-  }, [synthesizedAudio]);
+  }, [synthesizedAudio, playbackSpeed]);
 
   // Test Synthesis Vietnamese TTS
   const handleTestTTSVi = async () => {
@@ -316,6 +324,7 @@ export default function TeacherDashboard9RouterSettings() {
         audioViRef.current.pause();
         setIsPlayingTestAudioVi(false);
       } else {
+        audioViRef.current.playbackRate = playbackSpeed;
         audioViRef.current.play().catch((e) => {
           console.error(e);
           setTtsTestErrorVi("Không thể phát âm thanh tiếng Việt: " + e.message);
@@ -327,11 +336,12 @@ export default function TeacherDashboard9RouterSettings() {
 
   useEffect(() => {
     if (audioViRef.current) {
+      audioViRef.current.playbackRate = playbackSpeed;
       audioViRef.current.onended = () => {
         setIsPlayingTestAudioVi(false);
       };
     }
-  }, [synthesizedAudioVi]);
+  }, [synthesizedAudioVi, playbackSpeed]);
 
   // Micro recording system
   const startRecording = async () => {
@@ -683,6 +693,30 @@ export default function TeacherDashboard9RouterSettings() {
                     ))}
                   </datalist>
                 </div>
+              </div>
+
+              {/* Teacher-only synchronized playback speed */}
+              <div className="space-y-2 border-t border-[#E3DACD]/40 pt-4 mt-3">
+                <label className="font-sans font-medium text-xs text-[#5b5350] uppercase tracking-wide flex items-center justify-between">
+                  <span>Tốc độ phát đồng bộ</span>
+                  <span className="font-mono text-[#960005] bg-[#fff8f6] px-2 py-0.5 rounded-md text-[10px] font-bold">
+                    {playbackSpeed.toFixed(1)}x
+                  </span>
+                </label>
+                <select
+                  value={playbackSpeed}
+                  onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
+                  className="w-full bg-[#FFFDFA] border border-[#E3DACD] px-4 py-3 font-sans text-sm rounded-lg focus:ring-1 focus:ring-[#960005] focus:border-[#960005] transition-all"
+                >
+                  {playbackSpeedOptions.map((speed) => (
+                    <option key={speed} value={speed}>
+                      {speed.toFixed(1)}x
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[11px] text-[#5b5350] block">
+                  Chỉ giáo viên chỉnh tại AI & 9Router. Toàn bộ nút phát ở giao diện học viên sẽ tự đồng bộ theo tốc độ này, không hiển thị nút đổi tốc độ riêng.
+                </span>
               </div>
 
               {/* Use Custom STT Toggle */}

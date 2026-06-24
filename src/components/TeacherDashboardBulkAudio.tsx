@@ -38,11 +38,25 @@ export default function TeacherDashboardBulkAudio({
   const [targetType, setTargetType] = useState<"headwords" | "examples">("headwords");
   const [speakerName, setSpeakerName] = useState("Sophia AI (TTS)");
   const [exampleAudioMode, setExampleAudioMode] = useState<"en" | "vi" | "full">("en");
-  const [defaultPlaybackSpeed, setDefaultPlaybackSpeed] = useState<number>(1.0);
+  const [defaultPlaybackSpeed, setDefaultPlaybackSpeed] = useState<number>(() => {
+    const stored = Number(localStorage.getItem("ninerouter_playback_speed") || "1");
+    return Number.isFinite(stored) && stored > 0 ? stored : 1.0;
+  });
   const [colorFilter, setColorFilter] = useState<"all" | ChunkColor>("all");
   const [missingAudioOnly, setMissingAudioOnly] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [throttleDelay, setThrottleDelay] = useState(1000); // ms delay between calls
+
+  useEffect(() => {
+    const syncPlaybackSpeed = () => {
+      const stored = Number(localStorage.getItem("ninerouter_playback_speed") || "1");
+      setDefaultPlaybackSpeed(Number.isFinite(stored) && stored > 0 ? stored : 1.0);
+    };
+
+    syncPlaybackSpeed();
+    window.addEventListener("ninerouter_settings_updated", syncPlaybackSpeed);
+    return () => window.removeEventListener("ninerouter_settings_updated", syncPlaybackSpeed);
+  }, []);
 
   // Table selection state
   const [selectedWordIds, setSelectedWordIds] = useState<string[]>([]);
@@ -586,24 +600,14 @@ export default function TeacherDashboardBulkAudio({
               </div>
             )}
 
-            {/* Playback speed slider */}
-            <div className="space-y-1">
+            {/* Playback speed is configured only in AI & 9Router */}
+            <div className="space-y-1 rounded-lg border border-red-100 bg-red-50/50 p-3">
               <label className="text-[11px] font-bold uppercase text-neutral-500 flex items-center justify-between">
-                <span>Tốc độ phát mặc định</span>
-                <span className="font-mono text-red-600 bg-red-50 px-1.5 py-0.5 rounded text-[10px] font-bold">{defaultPlaybackSpeed.toFixed(1)}x</span>
+                <span>Tốc độ phát đồng bộ</span>
+                <span className="font-mono text-red-600 bg-white px-1.5 py-0.5 rounded text-[10px] font-bold">{defaultPlaybackSpeed.toFixed(1)}x</span>
               </label>
-              <input
-                type="range"
-                min="0.8"
-                max="1.5"
-                step="0.1"
-                value={defaultPlaybackSpeed}
-                onChange={(e) => setDefaultPlaybackSpeed(Number(e.target.value))}
-                disabled={isRunning}
-                className="w-full accent-red-600 cursor-pointer"
-              />
-              <span className="text-[9px] text-neutral-400 block italic leading-none">
-                Tốc độ phát lưu trực tiếp vào tệp âm thanh (giúp học sinh dễ nghe chậm/nhanh).
+              <span className="text-[9px] text-neutral-500 block italic leading-snug">
+                Giá trị này được đồng bộ từ AI & 9Router. Muốn đổi tốc độ, vào tab AI & 9Router để thiết lập — không chỉnh tại màn hình người dùng hoặc Bulk Audio.
               </span>
             </div>
 

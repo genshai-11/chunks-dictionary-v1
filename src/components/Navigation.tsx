@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Book, Bookmark, Sparkles, User, LogOut, Search, X, Settings, Users } from "lucide-react";
 import { DictionaryEntry, ChunkColor } from "../types";
+import chunksLogoUrl from "../../assets/.aistudio/logo.png";
 
 interface NavigationProps {
   activeTab: string;
@@ -37,9 +38,11 @@ export default function Navigation({
               className="flex items-center gap-2 cursor-pointer group shrink-0"
               id="brand-logo-clickable"
             >
-              <span className="text-xl md:text-2xl font-black tracking-wider text-white transition-all group-hover:text-red-400 font-sans">
-                CHUNKS
-              </span>
+              <img
+                src={chunksLogoUrl}
+                alt="CHUNKS"
+                className="h-9 w-auto object-contain brightness-0 invert opacity-95 transition-all group-hover:opacity-80"
+              />
             </div>
             <div className="h-4 w-[1px] bg-neutral-700 hidden sm:block" />
             <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-650/20 text-red-400 border border-red-500/20 text-[10px] font-extrabold uppercase tracking-widest leading-none">
@@ -107,9 +110,11 @@ export default function Navigation({
           className="flex items-center gap-2 cursor-pointer group shrink-0"
           id="brand-logo-clickable"
         >
-          <span className="text-xl md:text-2xl font-black tracking-wider text-neutral-900 transition-all group-hover:text-red-600 font-sans">
-            CHUNKS
-          </span>
+          <img
+            src={chunksLogoUrl}
+            alt="CHUNKS"
+            className="h-9 w-auto object-contain transition-all group-hover:scale-[1.02]"
+          />
         </div>
 
         {/* Header Search Bar */}

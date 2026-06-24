@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Play, Square, Volume2, Loader2 } from "lucide-react";
+import { Square, Volume2, Loader2 } from "lucide-react";
 
 interface AudioPlayerButtonProps {
   text: string;
@@ -25,16 +25,27 @@ export default function AudioPlayerButton({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [audioInstance, setAudioInstance] = useState<HTMLAudioElement | null>(null);
-  const [currentSpeed, setCurrentSpeed] = useState<number>(playbackSpeed || 1.0);
+  const [currentSpeed, setCurrentSpeed] = useState<number>(() => {
+    if (playbackSpeed) return playbackSpeed;
+    const stored = Number(localStorage.getItem("ninerouter_playback_speed") || "1");
+    return Number.isFinite(stored) && stored > 0 ? stored : 1.0;
+  });
 
-  // Sync speed when prop changes
+  // Sync speed from teacher-only AI & 9Router settings. The user-facing audio UI
+  // intentionally does not expose speed controls.
   useEffect(() => {
-    if (playbackSpeed) {
-      setCurrentSpeed(playbackSpeed);
+    const syncSpeed = () => {
+      const stored = Number(localStorage.getItem("ninerouter_playback_speed") || "1");
+      const nextSpeed = playbackSpeed || (Number.isFinite(stored) && stored > 0 ? stored : 1.0);
+      setCurrentSpeed(nextSpeed);
       if (audioInstance) {
-        audioInstance.playbackRate = playbackSpeed;
+        audioInstance.playbackRate = nextSpeed;
       }
-    }
+    };
+
+    syncSpeed();
+    window.addEventListener("ninerouter_settings_updated", syncSpeed);
+    return () => window.removeEventListener("ninerouter_settings_updated", syncSpeed);
   }, [playbackSpeed, audioInstance]);
 
   // Auto-detect language if specified as "auto"
@@ -174,19 +185,6 @@ export default function AudioPlayerButton({
     window.speechSynthesis.speak(utterance);
   };
 
-  const handleSpeedChange = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    const nextSpeeds = [0.8, 1.0, 1.2, 1.5];
-    const currentIndex = nextSpeeds.indexOf(currentSpeed);
-    const nextIndex = (currentIndex + 1) % nextSpeeds.length;
-    const newSpeed = nextSpeeds[nextIndex];
-    setCurrentSpeed(newSpeed);
-    if (audioInstance) {
-      audioInstance.playbackRate = newSpeed;
-    }
-  };
-
   const buttonStyle = {
     color: isPlaying ? "white" : color,
     backgroundColor: isPlaying ? color : "transparent",
@@ -215,14 +213,6 @@ export default function AudioPlayerButton({
         </span>
       </button>
 
-      <button
-        type="button"
-        onClick={handleSpeedChange}
-        className="px-1.5 py-0.5 text-[9px] font-mono font-bold bg-[#fff8f6] hover:bg-[#fff0ed] text-[#c10b0d] hover:text-red-700 border border-[#e3dacd]/50 hover:border-red-300 rounded cursor-pointer transition-all active:scale-95 select-none"
-        title="Bấm để thay đổi tốc độ phát (0.8x -> 1.0x -> 1.2x -> 1.5x)"
-      >
-        {currentSpeed.toFixed(1)}x
-      </button>
     </div>
   );
 }

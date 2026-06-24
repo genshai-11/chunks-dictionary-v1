@@ -39,6 +39,7 @@ import {
 import { DictionaryEntry, ChunkColor, ExampleItem, RelatedTermItem } from "./types";
 import Navigation from "./components/Navigation";
 import AudioPlayerButton from "./components/AudioPlayerButton";
+import chunksLogoUrl from "../assets/.aistudio/logo.png";
 import VoiceSearchOverlay from "./components/VoiceSearchOverlay";
 import SentenceSegmenter from "./components/SentenceSegmenter";
 import TeacherDashboardAudioManager from "./components/TeacherDashboardAudioManager";
@@ -1346,10 +1347,15 @@ export default function App() {
                   <div className="relative z-10 md:w-2/3 space-y-4">
                     {/* Slogan & Definition header */}
                     <div className="space-y-1.5 select-text">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#960005]" />
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={chunksLogoUrl}
+                          alt="CHUNKS"
+                          className="h-7 w-auto object-contain drop-shadow-sm"
+                          loading="lazy"
+                        />
                         <span className="font-display text-[10px] md:text-xs font-black uppercase tracking-widest text-[#960005]">
-                          CHUNKS LINGUISTICS
+                          LINGUISTICS
                         </span>
                       </div>
                       
@@ -2936,9 +2942,17 @@ export default function App() {
       <footer className="bg-[#960005] text-white py-10 mt-16 shadow-inner" id="app-footer">
         <div className="max-w-6xl mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left space-y-1.5">
-            <h5 className="font-extrabold font-display uppercase tracking-widest text-red-100">
-              CHUNKS DICTIONARY
-            </h5>
+            <div className="flex items-center justify-center md:justify-start gap-3">
+              <img
+                src={chunksLogoUrl}
+                alt="CHUNKS Dictionary"
+                className="h-10 w-auto object-contain brightness-0 invert opacity-95"
+                loading="lazy"
+              />
+              <h5 className="font-extrabold font-display uppercase tracking-widest text-red-100">
+                DICTIONARY
+              </h5>
+            </div>
             <p className="text-xs text-red-200/90 max-w-sm">
               Chunks gợi ý mẫu câu, cụm diễn đạt và ví dụ đời thường để bạn tìm đúng cụm, bắt đúng sắc thái, nói tự nhiên hơn — và “có ý” hơn.
             </p>
