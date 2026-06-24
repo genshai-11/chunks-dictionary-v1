@@ -44,6 +44,7 @@ export default function TeacherDashboardBulkAudio({
   });
   const [colorFilter, setColorFilter] = useState<"all" | ChunkColor>("all");
   const [missingAudioOnly, setMissingAudioOnly] = useState(true);
+  const [forceRegenerate, setForceRegenerate] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [throttleDelay, setThrottleDelay] = useState(1000); // ms delay between calls
 
@@ -97,7 +98,7 @@ export default function TeacherDashboardBulkAudio({
     // Reset selection on target shift
     setSelectedWordIds([]);
     setSelectedExampleIds([]);
-  }, [targetType, colorFilter, missingAudioOnly, searchQuery]);
+  }, [targetType, colorFilter, missingAudioOnly, forceRegenerate, searchQuery]);
 
   const addLog = (type: "info" | "success" | "error" | "warn", message: string) => {
     const timestamp = new Date().toLocaleTimeString("vi-VN", {
@@ -119,7 +120,7 @@ export default function TeacherDashboardBulkAudio({
     const hasVocabularyAudioEn = item.teacher_audios?.some((audio) => audio.lang === "en");
     const hasVocabularyAudioVi = item.teacher_audios?.some((audio) => audio.lang === "vi");
     const hasAudio = !!hasVocabularyAudioEn && !!hasVocabularyAudioVi;
-    const matchesMissing = !missingAudioOnly || !hasAudio;
+    const matchesMissing = forceRegenerate || !missingAudioOnly || !hasAudio;
 
     return matchesColor && matchesSearch && matchesMissing;
   });
@@ -137,7 +138,7 @@ export default function TeacherDashboardBulkAudio({
           item.en.toLowerCase().includes(searchQuery.toLowerCase());
         
         const hasAudio = !!ex.audio_url;
-        const matchesMissing = !missingAudioOnly || !hasAudio;
+        const matchesMissing = forceRegenerate || !missingAudioOnly || !hasAudio;
 
         if (matchesSearch && matchesMissing) {
           currentExampleTargets.push({
@@ -227,7 +228,7 @@ export default function TeacherDashboardBulkAudio({
     setCurrentIndex(0);
     setTotalToProcess(listToWork.length);
 
-    addLog("info", `🚀 Khởi chạy chiến dịch TTS tạo hàng loạt cho ${listToWork.length} mục...`);
+    addLog("info", `🚀 Khởi chạy chiến dịch TTS ${forceRegenerate ? "REGENERATE/OVERWRITE" : "tạo thiếu"} cho ${listToWork.length} mục...`);
     addLog("info", `🎙️ AI Speaker: ${speakerName} | Delay kìm nén: ${throttleDelay}ms`);
 
     // Helper sleep function
@@ -278,7 +279,7 @@ export default function TeacherDashboardBulkAudio({
 
           // 1. English Headword
           const hasEnAudio = currentEntry.teacher_audios?.some(a => a.lang === "en");
-          if (!hasEnAudio) {
+          if (forceRegenerate || !hasEnAudio) {
             addLog("info", `   - Đang tạo âm tiếng Anh cho "${currentEntry.en}"...`);
             const ttsResponse = await fetch("/api/tts", {
               method: "POST",
@@ -303,14 +304,14 @@ export default function TeacherDashboardBulkAudio({
                 playback_speed: defaultPlaybackSpeed,
                 lang: "en" as const
               };
-              updatedEntry.teacher_audios = [newAudio, ...(updatedEntry.teacher_audios || [])];
+              updatedEntry.teacher_audios = [newAudio, ...(updatedEntry.teacher_audios || []).filter((audio) => audio.lang !== "en")];
               anyChange = true;
             }
           }
 
           // 2. Vietnamese Headword
           const hasViAudio = currentEntry.teacher_audios?.some(a => a.lang === "vi");
-          if (!hasViAudio) {
+          if (forceRegenerate || !hasViAudio) {
             addLog("info", `   - Đang tạo âm tiếng Việt cho "${currentEntry.vn}"...`);
             const nrModelVi = localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural";
             const headersVi = { ...headers };
@@ -341,7 +342,7 @@ export default function TeacherDashboardBulkAudio({
                 playback_speed: defaultPlaybackSpeed,
                 lang: "vi" as const
               };
-              updatedEntry.teacher_audios = [newAudio, ...(updatedEntry.teacher_audios || [])];
+              updatedEntry.teacher_audios = [newAudio, ...(updatedEntry.teacher_audios || []).filter((audio) => audio.lang !== "vi")];
               anyChange = true;
             }
           }
@@ -647,17 +648,32 @@ export default function TeacherDashboardBulkAudio({
               </span>
             </div>
 
-            {/* Missing filters checkboxes */}
-            <div className="block pt-1">
+            {/* Missing/regenerate filters */}
+            <div className="space-y-2 pt-1">
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={missingAudioOnly}
                   onChange={(e) => setMissingAudioOnly(e.target.checked)}
-                  disabled={isRunning}
-                  className="w-4 h-4 rounded text-red-600 focus:ring-red-400 accent-red-600 cursor-pointer"
+                  disabled={isRunning || forceRegenerate}
+                  className="w-4 h-4 rounded text-red-600 focus:ring-red-400 accent-red-600 cursor-pointer disabled:opacity-50"
                 />
                 <span className="text-xs font-bold text-neutral-700">Chỉ hiện những từ CHƯA CÓ AUDIO</span>
+              </label>
+              <label className="flex items-start gap-2 cursor-pointer select-none rounded-lg border border-amber-200 bg-amber-50/70 p-2.5">
+                <input
+                  type="checkbox"
+                  checked={forceRegenerate}
+                  onChange={(e) => setForceRegenerate(e.target.checked)}
+                  disabled={isRunning}
+                  className="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-400 accent-amber-600 cursor-pointer"
+                />
+                <span className="text-xs font-bold text-amber-900 leading-snug">
+                  Regenerate / overwrite toàn bộ audio đã chọn
+                  <span className="block text-[10px] font-medium text-amber-700 mt-0.5">
+                    Dùng khi đổi model TTS mới. Audio EN/VI cũ sẽ được thay bằng bản mới, lời giảng chi tiết vẫn giữ nguyên.
+                  </span>
+                </span>
               </label>
             </div>
           </div>
@@ -1080,6 +1096,11 @@ export default function TeacherDashboardBulkAudio({
               <p className="text-xs text-neutral-550 leading-relaxed font-semibold font-sans">
                 Hệ thống sẽ tiến hành gửi <strong className="text-red-650">{targetType === "headwords" ? selectedWordIds.length : selectedExampleIds.length}</strong> yêu cầu sinh giọng nói AI bản xứ trực tuyến. Thao tác này diễn ra tuần tự với khoảng trễ {throttleDelay}ms để bảo đảm an toàn. Bạn có đồng ý tiếp tục?
               </p>
+              {forceRegenerate && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-900 font-semibold leading-relaxed">
+                  <strong>Regenerate đang bật:</strong> audio EN/VI hoặc audio ví dụ trong các mục đã chọn sẽ được tạo lại theo model TTS hiện tại và ghi đè bản cũ. Lời giảng chi tiết của Chunks AI/giáo viên sẽ không bị xóa.
+                </div>
+              )}
               <div className="flex items-center gap-3 justify-end pt-2">
                 <button
                   type="button"

@@ -80,7 +80,7 @@ export default function TeacherDashboardBulkImport({
   // Connection modes for sheets
   const [activeTab, setActiveTab2] = useState<"csv" | "sheets">("csv");
   const [sheetUrl, setSheetUrl] = useState("");
-  const [sheetRange, setSheetRange] = useState("Sheet1!A1"); // modified default from Sheet1!A:K to Sheet1!A1 for writing compatibility
+  const [sheetRange, setSheetRange] = useState("Sheet1!A1"); // write anchor; read requests auto-expand to A:Z
   const [isFetchingSheet, setIsFetchingSheet] = useState(false);
   const [sheetError, setSheetError] = useState("");
   const [sheetSuccessMessage, setSheetSuccessMessage] = useState<string | null>(null);
@@ -400,6 +400,20 @@ export default function TeacherDashboardBulkImport({
     };
   };
 
+  const normalizeSheetReadRange = (range: string) => {
+    const trimmed = (range || "Sheet1!A1").trim();
+    const bangIndex = trimmed.indexOf("!");
+    if (bangIndex === -1) return `${trimmed}!A:Z`;
+
+    const sheetName = trimmed.slice(0, bangIndex);
+    const cellRange = trimmed.slice(bangIndex + 1).replace(/'/g, "");
+    // If the UI range is a single write anchor like A1, expand read to the whole table.
+    if (/^[A-Z]+\d+$/i.test(cellRange)) {
+      return `${sheetName}!A:Z`;
+    }
+    return trimmed;
+  };
+
   const fetchGoogleSheetData = async () => {
     setSheetError("");
     setSheetSuccessMessage(null);
@@ -438,6 +452,8 @@ export default function TeacherDashboardBulkImport({
         }
       }
 
+      const readRange = normalizeSheetReadRange(currentRange);
+
       const fetchResponse = await fetch("/api/sheets/import", {
         method: "POST",
         headers: {
@@ -447,7 +463,7 @@ export default function TeacherDashboardBulkImport({
         body: JSON.stringify({
           spreadsheetId: info.spreadsheetId,
           gid: info.gid,
-          range: currentRange,
+          range: readRange,
           token: token
         })
       });
@@ -464,9 +480,9 @@ export default function TeacherDashboardBulkImport({
         setSheetError("");
         try {
           const parsedRows = parseTextToRows(resData.csvText);
-          setSheetSuccessMessage(`✅ Đồng bộ Google Sheets kết nối thành công! Nạp ${parsedRows.length} dòng từ vựng.`);
+          setSheetSuccessMessage(`✅ Đồng bộ Google Sheets kết nối thành công! Nạp ${parsedRows.length} dòng từ vựng từ ${normalizeSheetReadRange(currentRange)}. Bấm Import để lưu vào Firestore database.`);
         } catch (parseErr) {
-          setSheetSuccessMessage("✅ Đồng bộ Google Sheets kết nối thành công!");
+          setSheetSuccessMessage("✅ Đồng bộ Google Sheets kết nối thành công! Bấm Import để lưu vào Firestore database.");
         }
       } else {
         throw new Error("Dữ liệu phản hồi từ máy chủ bị trống.");
@@ -755,7 +771,7 @@ export default function TeacherDashboardBulkImport({
             <FileSpreadsheet className="w-5 h-5 text-red-600" /> BẢNG NHẬP CỤM TỪ HÀNG LOẠT & GOOGLE SHEETS
           </h3>
           <p className="text-xs text-neutral-550 font-medium font-sans">
-            Thực hiện nhập nhanh thông qua chép-dán CSV nâng cao hoặc kết nối trực tiếp đến bảng tính trực tuyến của bạn.
+            Thực hiện nhập nhanh thông qua CSV hoặc Google Sheets. Dữ liệu sau khi bấm Import sẽ lưu vào Firestore database; không tự động upload Firebase Storage.
           </p>
         </div>
       </div>

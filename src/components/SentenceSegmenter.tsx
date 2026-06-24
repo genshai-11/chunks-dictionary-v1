@@ -48,7 +48,7 @@ export default function SentenceSegmenter({ onNavigateToDetail, entries }: Sente
 
   // Chunker Persona States (with LocalStorage persistency)
   const [chunkerName, setChunkerName] = useState(() => {
-    return localStorage.getItem("chunker_name") || "Chunker AI";
+    return localStorage.getItem("chunker_name") || "Chunks AI";
   });
   const [chunkerAvatar, setChunkerAvatar] = useState(() => {
     return localStorage.getItem("chunker_avatar") || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop";
@@ -1219,7 +1219,7 @@ export default function SentenceSegmenter({ onNavigateToDetail, entries }: Sente
 
         </div>
 
-        {/* RIGHT COLUMN: Mascot persona ("Chunker AI") & interactive settings panel (Desktop Col-span-4) */}
+        {/* RIGHT COLUMN: Mascot persona ("Chunks AI") & interactive settings panel (Desktop Col-span-4) */}
         <div className="lg:col-span-4 space-y-5">
           
           {/* Chunker Mascot Identity Card */}
@@ -1281,7 +1281,7 @@ export default function SentenceSegmenter({ onNavigateToDetail, entries }: Sente
                     type="text"
                     value={chunkerName}
                     onChange={(e) => persistConfig(e.target.value, chunkerAvatar, chunkerRole)}
-                    placeholder="Ví dụ: Chunker AI..."
+                    placeholder="Ví dụ: Chunks AI..."
                     className="w-full p-2 bg-neutral-50 border border-neutral-200 rounded-lg text-xs text-neutral-800 font-sans focus:outline-none focus:ring-1 focus:ring-red-400 focus:bg-white"
                   />
                 </div>
@@ -1340,7 +1340,7 @@ export default function SentenceSegmenter({ onNavigateToDetail, entries }: Sente
                 <button
                   type="button"
                   onClick={() => {
-                    persistConfig("Chunker AI", "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop", "Trợ Lý Phân Tích Ngữ Pháp");
+                    persistConfig("Chunks AI", "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop", "Trợ Lý Phân Tích Ngữ Pháp");
                   }}
                   className="w-full py-1.5 text-center bg-neutral-100 hover:bg-neutral-150 text-neutral-500 text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
                 >

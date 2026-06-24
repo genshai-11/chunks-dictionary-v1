@@ -45,6 +45,7 @@ import chunksLogoUrl from "../assets/.aistudio/logo.png";
 import VoiceSearchOverlay from "./components/VoiceSearchOverlay";
 import SentenceSegmenter from "./components/SentenceSegmenter";
 import TeacherDashboardAudioManager from "./components/TeacherDashboardAudioManager";
+import TeacherDashboardBulkAudio from "./components/TeacherDashboardBulkAudio";
 import TeacherDashboardBulkImport from "./components/TeacherDashboardBulkImport";
 import TeacherDashboardAIGenerator from "./components/TeacherDashboardAIGenerator";
 import TeacherDashboard9RouterSettings from "./components/TeacherDashboard9RouterSettings";
@@ -153,6 +154,14 @@ export default function App() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [newsletterEmail, setNewsletterEmail] = useState<string>("");
   const [newsletterSubscribed, setNewsletterSubscribed] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("chunker_name") === "Chunker AI") {
+        localStorage.setItem("chunker_name", "Chunks AI");
+      }
+    } catch (_) {}
+  }, []);
 
   const handleRemoveRecentSearch = (termToRemove: string) => {
     setRecentSearches((prev) => {
@@ -1540,7 +1549,7 @@ export default function App() {
             const highlightClass = highlightColorClasses[detailEntry.color];
 
             // Dynamic customizable Chunker persona
-            const currentChunkerName = localStorage.getItem("chunker_name") || "Chunker AI";
+            const currentChunkerName = localStorage.getItem("chunker_name") || "Chunks AI";
             const currentChunkerAvatar = localStorage.getItem("chunker_avatar") || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop";
             const currentChunkerRole = localStorage.getItem("chunker_role") || "Trợ Lý Phân Tích Ngữ Pháp";
 
@@ -2076,6 +2085,23 @@ export default function App() {
 
                     <button
                       type="button"
+                      id="tab-btn-bulk-audio"
+                      onClick={() => setTeacherSubTab('bulk-audio')}
+                      className={`w-full flex items-center justify-between group px-3.5 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-left border-l-[3px] ${
+                        teacherSubTab === 'bulk-audio'
+                          ? 'border-[#c10b0d] bg-[#fff8f6] text-[#c10b0d] font-extrabold shadow-3xs'
+                          : 'border-transparent text-[#5b5350] hover:bg-[#fffcfb]/80 hover:text-[#201a19] hover:border-[#e3dacd]/60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Volume2 className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${teacherSubTab === 'bulk-audio' ? 'text-[#c10b0d]' : 'text-neutral-400 group-hover:text-neutral-600'}`} />
+                        <span className="font-sans leading-none">Tạo Audio EN/VI</span>
+                      </div>
+                      {teacherSubTab === 'bulk-audio' && <div className="w-1.5 h-1.5 rounded-full bg-[#c10b0d]" />}
+                    </button>
+
+                    <button
+                      type="button"
                       id="tab-btn-bulk-import"
                       onClick={() => setTeacherSubTab('bulk-import')}
                       className={`w-full flex items-center justify-between group px-3.5 py-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-left border-l-[3px] ${
@@ -2190,6 +2216,13 @@ export default function App() {
 
               {teacherSubTab === 'audios' && (
                 <TeacherDashboardAudioManager
+                  entries={entries}
+                  onUpdateEntries={fetchEntries}
+                />
+              )}
+
+              {teacherSubTab === 'bulk-audio' && (
+                <TeacherDashboardBulkAudio
                   entries={entries}
                   onUpdateEntries={fetchEntries}
                 />
@@ -2977,6 +3010,7 @@ export default function App() {
             className="fixed inset-0 z-50"
           >
             <VoiceSearchOverlay 
+              entries={entries}
               onClose={() => setIsVoiceSearchOpen(false)} 
               onResultMatched={handleVoiceSearchResult}
             />

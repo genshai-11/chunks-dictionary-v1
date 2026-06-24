@@ -751,6 +751,14 @@ teacherRouter.post("/sheets/import", async (req, res) => {
     }
 
     let csvText = "";
+    const normalizeSheetReadRange = (rawRange?: string) => {
+      const trimmed = (rawRange || "Sheet1!A:Z").trim();
+      const bangIndex = trimmed.indexOf("!");
+      if (bangIndex === -1) return `${trimmed}!A:Z`;
+      const sheetName = trimmed.slice(0, bangIndex);
+      const cellRange = trimmed.slice(bangIndex + 1).replace(/'/g, "");
+      return /^[A-Z]+\d+$/i.test(cellRange) ? `${sheetName}!A:Z` : trimmed;
+    };
     const isPublishedToWeb = spreadsheetId.startsWith("2PACX-") || (spreadsheetId.length > 50 && spreadsheetId.includes("2PACX-"));
 
     // Respect Authorization header if supplied by client
@@ -761,7 +769,7 @@ teacherRouter.post("/sheets/import", async (req, res) => {
     if (authHeader && !isPublishedToWeb) {
       try {
         // Authenticated Mode: Fetch via Official Google Sheets API
-        const targetRange = range || "Sheet1!A:K";
+        const targetRange = normalizeSheetReadRange(range);
         const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(targetRange)}`;
         console.log(`[Google Sheets] Proxying private fetch directly to: ${apiUrl}`);
 
