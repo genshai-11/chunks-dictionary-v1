@@ -950,6 +950,7 @@ export default function App() {
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         entries={entries}
+        onOpenVoiceSearch={() => setIsVoiceSearchOpen(true)}
       />
 
       {/* Main Container */}
@@ -2946,7 +2947,7 @@ export default function App() {
               <img
                 src={chunksLogoUrl}
                 alt="CHUNKS Dictionary"
-                className="h-10 w-auto object-contain brightness-0 invert opacity-95"
+                className="h-10 w-auto object-contain opacity-95"
                 loading="lazy"
               />
               <h5 className="font-extrabold font-display uppercase tracking-widest text-red-100">

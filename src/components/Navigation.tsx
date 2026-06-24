@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Book, Bookmark, Sparkles, User, LogOut, Search, X, Settings, Users } from "lucide-react";
+import { Book, Bookmark, Sparkles, User, LogOut, Search, X, Settings, Users, Mic } from "lucide-react";
 import { DictionaryEntry, ChunkColor } from "../types";
 import chunksLogoUrl from "../../assets/.aistudio/logo.png";
 
@@ -11,6 +11,7 @@ interface NavigationProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   entries: DictionaryEntry[];
+  onOpenVoiceSearch: () => void;
 }
 
 export default function Navigation({ 
@@ -20,7 +21,8 @@ export default function Navigation({
   onLogout,
   searchTerm,
   setSearchTerm,
-  entries
+  entries,
+  onOpenVoiceSearch
 }: NavigationProps) {
   const [isFocused, setIsFocused] = useState(false);
   const isDashboardView = ["teacher-dashboard", "teacher-editor"].includes(activeTab);
@@ -28,7 +30,7 @@ export default function Navigation({
   if (isDashboardView) {
     return (
       <header 
-        className="sticky top-0 z-40 bg-neutral-900 border-b border-neutral-800 text-white shadow-sm font-sans"
+        className="sticky top-0 z-40 bg-white border-b border-neutral-200 shadow-xs font-sans"
         id="global-header-navigation-admin"
       >
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
@@ -41,20 +43,20 @@ export default function Navigation({
               <img
                 src={chunksLogoUrl}
                 alt="CHUNKS"
-                className="h-9 w-auto object-contain brightness-0 invert opacity-95 transition-all group-hover:opacity-80"
+                className="h-9 w-auto object-contain transition-all group-hover:scale-[1.02]"
               />
             </div>
-            <div className="h-4 w-[1px] bg-neutral-700 hidden sm:block" />
-            <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-650/20 text-red-400 border border-red-500/20 text-[10px] font-extrabold uppercase tracking-widest leading-none">
+            <div className="h-4 w-[1px] bg-neutral-200 hidden sm:block" />
+            <div className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-50 text-red-650 border border-red-100 text-[10px] font-extrabold uppercase tracking-widest leading-none">
               ADMIN WORKSPACE
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex bg-neutral-800 p-1 rounded-full items-center mr-2">
+            <div className="flex bg-neutral-100 p-1 rounded-full items-center mr-2 border border-neutral-200">
               <button
                 onClick={() => setActiveTab("search")}
-                className="px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-neutral-700 text-white shadow-sm flex items-center gap-1.5"
+                className="px-4 py-1.5 rounded-full text-xs font-bold transition-all text-neutral-500 hover:bg-neutral-200 flex items-center gap-1.5 cursor-pointer"
               >
                 Học tập
               </button>
@@ -69,7 +71,7 @@ export default function Navigation({
               <button
                 id="nav-btn-logout-admin"
                 onClick={onLogout}
-                className="px-3 py-1.5 text-neutral-400 hover:text-red-400 text-xs font-bold flex items-center gap-1.5 cursor-pointer rounded-lg hover:bg-neutral-800 transition-colors font-sans"
+                className="px-3 py-1.5 text-neutral-500 hover:text-red-650 text-xs font-bold flex items-center gap-1.5 cursor-pointer rounded-lg hover:bg-red-50 transition-colors font-sans"
                 title="Đăng xuất giáo viên"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -134,12 +136,26 @@ export default function Navigation({
               }
             }}
             placeholder="Tra từ nhanh..."
-            className="w-full pl-9 pr-8 py-1.5 bg-neutral-50 hover:bg-neutral-100/80 border border-neutral-200 rounded-lg text-xs font-sans text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-400 focus:bg-white transition-all"
+            className="w-full pl-9 pr-16 py-1.5 bg-neutral-50 hover:bg-neutral-100/80 border border-neutral-200 rounded-lg text-xs font-sans text-neutral-800 focus:outline-none focus:ring-1 focus:ring-neutral-400 focus:bg-white transition-all"
           />
+          <button
+            type="button"
+            onClick={() => {
+              if (activeTab !== "search") setActiveTab("search");
+              onOpenVoiceSearch();
+            }}
+            className={`absolute ${searchTerm ? "right-8" : "right-2.5"} p-0.5 text-red-600 hover:text-red-700 rounded-full hover:bg-red-50 cursor-pointer transition-colors`}
+            title="Tra cứu bằng giọng nói — dùng model Speech-to-Text trong AI & 9Router"
+            aria-label="Tra cứu bằng giọng nói"
+          >
+            <Mic className="w-3.5 h-3.5" />
+          </button>
           {searchTerm && (
             <button
               onClick={() => setSearchTerm("")}
               className="absolute right-2.5 p-0.5 text-neutral-400 hover:text-neutral-600 rounded-full hover:bg-neutral-100 cursor-pointer"
+              title="Xóa tìm kiếm"
+              aria-label="Xóa tìm kiếm"
             >
               <X className="w-3.5 h-3.5" />
             </button>
