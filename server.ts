@@ -5,13 +5,13 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { INITIAL_ENTRIES } from "./src/data.ts";
 import { DictionaryEntry, ExampleItem, RelatedTermItem } from "./src/types.ts";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, getDocs, getDoc, setDoc, deleteDoc, updateDoc, setLogLevel } from "firebase/firestore";
+import { initializeApp, getApps, applicationDefault } from "firebase-admin/app";
+import { getFirestore, Firestore } from "firebase-admin/firestore";
 
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json({ limit: "50mb" }));
 
@@ -24,19 +24,26 @@ const CLASSES_STORE_PATH = path.resolve(process.cwd(), "src/classes_store.json")
 let dictionaryStore: DictionaryEntry[] = [];
 let classesStore: any[] = [];
 
-// Initialize Firebase
+// Initialize Firebase Admin SDK. In Cloud Run this uses Application Default Credentials
+// from the service account; locally it can use GOOGLE_APPLICATION_CREDENTIALS or gcloud ADC.
 const firebaseConfigPath = path.resolve(process.cwd(), "firebase-applet-config.json");
-let db: any = null;
+let db: Firestore | null = null;
 
 if (fs.existsSync(firebaseConfigPath)) {
   try {
     const firebaseConfig = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf-8"));
-    const firebaseApp = initializeApp(firebaseConfig);
-    setLogLevel("error");
+    const firebaseApp = getApps().length === 0
+      ? initializeApp({
+          projectId: firebaseConfig.projectId,
+          storageBucket: firebaseConfig.storageBucket,
+          credential: applicationDefault(),
+        })
+      : getApps()[0];
+
     db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
-    console.log("Firebase Firestore initialized successfully with database ID:", firebaseConfig.firestoreDatabaseId);
+    console.log("Firebase Admin Firestore initialized successfully with database ID:", firebaseConfig.firestoreDatabaseId);
   } catch (err: any) {
-    console.error("Failed to initialize Firebase Firestore:", err.message);
+    console.error("Failed to initialize Firebase Admin Firestore:", err.message);
   }
 } else {
   console.warn("No firebase-applet-config.json found. Firebase Firestore cannot be initialized.");
@@ -52,8 +59,7 @@ async function initFirestoreStore() {
   try {
     // 1. Initialize Dictionary Entries
     console.log("Initializing dictionary entries from Firestore...");
-    const entriesCol = collection(db, "entries");
-    const entriesSnapshot = await getDocs(entriesCol);
+    const entriesSnapshot = await db.collection("entries").get();
     
     if (entriesSnapshot.empty) {
       console.log("Firestore 'entries' collection is empty. Seeding from local data...");
@@ -70,8 +76,7 @@ async function initFirestoreStore() {
 
       // Seed entries
       for (const entry of initialData) {
-        const entryDocRef = doc(db, "entries", entry.id);
-        await setDoc(entryDocRef, entry);
+        await db.collection("entries").doc(entry.id).set(entry);
       }
       console.log(`Successfully seeded ${initialData.length} entries to Firestore.`);
       dictionaryStore = initialData;
@@ -86,8 +91,7 @@ async function initFirestoreStore() {
 
     // 2. Initialize Classes
     console.log("Initializing classes from Firestore...");
-    const classesCol = collection(db, "classes");
-    const classesSnapshot = await getDocs(classesCol);
+    const classesSnapshot = await db.collection("classes").get();
 
     if (classesSnapshot.empty) {
       console.log("Firestore 'classes' collection is empty. Seeding from local data...");
@@ -102,8 +106,7 @@ async function initFirestoreStore() {
 
       // Seed classes
       for (const cls of initialClasses) {
-        const classDocRef = doc(db, "classes", cls.id);
-        await setDoc(classDocRef, cls);
+        await db.collection("classes").doc(cls.id).set(cls);
       }
       console.log(`Successfully seeded ${initialClasses.length} classes to Firestore.`);
       classesStore = initialClasses;
@@ -153,8 +156,7 @@ initFirestoreStore();
 async function saveEntryToFirestore(entry: DictionaryEntry) {
   if (db) {
     try {
-      const docRef = doc(db, "entries", entry.id);
-      await setDoc(docRef, entry);
+      await db.collection("entries").doc(entry.id).set(entry);
       console.log(`Saved entry "${entry.en}" to Firestore.`);
     } catch (err: any) {
       console.error(`Failed to save entry "${entry.en}" to Firestore:`, err.message);
@@ -165,8 +167,7 @@ async function saveEntryToFirestore(entry: DictionaryEntry) {
 async function deleteEntryFromFirestore(id: string) {
   if (db) {
     try {
-      const docRef = doc(db, "entries", id);
-      await deleteDoc(docRef);
+      await db.collection("entries").doc(id).delete();
       console.log(`Deleted entry "${id}" from Firestore.`);
     } catch (err: any) {
       console.error(`Failed to delete entry "${id}" from Firestore:`, err.message);
@@ -177,8 +178,7 @@ async function deleteEntryFromFirestore(id: string) {
 async function saveClassToFirestore(classroom: any) {
   if (db) {
     try {
-      const docRef = doc(db, "classes", classroom.id);
-      await setDoc(docRef, classroom);
+      await db.collection("classes").doc(classroom.id).set(classroom);
       console.log(`Saved class "${classroom.name}" to Firestore.`);
     } catch (err: any) {
       console.error(`Failed to save class "${classroom.name}" to Firestore:`, err.message);
@@ -189,8 +189,7 @@ async function saveClassToFirestore(classroom: any) {
 async function deleteClassFromFirestore(id: string) {
   if (db) {
     try {
-      const docRef = doc(db, "classes", id);
-      await deleteDoc(docRef);
+      await db.collection("classes").doc(id).delete();
       console.log(`Deleted class "${id}" from Firestore.`);
     } catch (err: any) {
       console.error(`Failed to delete class "${id}" from Firestore:`, err.message);
