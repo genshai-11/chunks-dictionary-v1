@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Oswald", "sans-serif";
+  --font-sans: "Be Vietnam Pro", "Inter", "sans-serif";
+  --font-mono: "JetBrains Mono", "ui-monospace", monospace;
+  
+  /* Primary Chunks Palette values */
+  --color-chunks-primary: #bf080b;
+  --color-chunks-crimson: #c10b0d;
+  --color-chunks-bg: #fff8f6;
+  --color-chunks-surface: #ffffff;
+  --color-chunks-ink: #201a19;
+  --color-chunks-outline: #e3dacd;
+  --color-chunks-neutral-gray: #5b5350;
+
+  /* Accent Categories */
+  --color-chunk-green: #006d37;
+  --color-chunk-blue: #003faa;
+  --color-chunk-red: #960005;
+  --color-chunk-pink: #d946ef;
+
+  /* Editorial 9Router colors */
+  --color-primary-container-editorial: #c10b0d;
+  --color-on-primary-container-editorial: #ffffff;
+  --color-outline-variant-editorial: #e6bdb7;
+  --color-surface-container-low: #fff0ee;
+  --color-surface-container-highest: #fcdbd7;
+  --color-surface-container: #ffe9e6;
+  --color-primary-editorial: #960005;
+  --color-secondary-editorial: #a7382d;
+}
+
+/* Custom layout behaviors matching high-end linguistic journal look */
+body {
+  font-family: var(--font-sans);
+  background-color: #F6F1EA; /* Base background from Style Guidance */
+  color: #281715;
+  overflow-x: hidden;
+}
+
+.editorial-shadow {
+  box-shadow: 0 4px 12px rgba(26, 20, 19, 0.05);
+}
+
+.headline-oswald {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.label-caps {
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Scrollbar behaviors for premium editorial broadsheet look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F6F1EA;
+}
+::-webkit-scrollbar-thumb {
+  background: #E3DACD;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #916f6a;
+}
+
+/* Audio Wave Visualizer Animations */
+@keyframes chunkWave {
+  0%, 100% {
+    transform: scaleY(0.12);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.animate-chunk-wave {
+  animation: chunkWave var(--wave-dur, 0.9s) ease-in-out infinite;
+  transform-origin: center;
+}

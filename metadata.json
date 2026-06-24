@@ -1,0 +1,8 @@
+{
+  "name": "CHUNKS Dictionary",
+  "description": "An interactive bilingual vocabulary dictionary using the chunking method to categorize phrases (Gap Fillers, Sentence Frames, Idioms, Key Terms) with AI assistance and speech integration.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

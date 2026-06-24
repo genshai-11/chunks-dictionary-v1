@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "DictionaryEntry": {
+      "title": "DictionaryEntry",
+      "description": "A single vocabulary word or chunk entry with examples, related terms, and recordings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "en": { "type": "string" },
+        "vn": { "type": "string" },
+        "pos": { "type": "string" },
+        "color": { "type": "string" },
+        "ipa": { "type": "string" },
+        "definition": { "type": "string" },
+        "status": { "type": "string" },
+        "isRecommended": { "type": "boolean" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "examples": { "type": "array" },
+        "related_terms": { "type": "array" },
+        "teacher_audios": { "type": "array" }
+      },
+      "required": ["id", "en", "vn"]
+    },
+    "Classroom": {
+      "title": "Classroom",
+      "description": "A class with assignments and announcements",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "studentCount": { "type": "number" },
+        "assignedChunks": { "type": "array" },
+        "announcements": { "type": "array" }
+      },
+      "required": ["id", "name"]
+    }
+  },
+  "firestore": {
+    "entries/{entryId}": {
+      "schema": "DictionaryEntry",
+      "description": "Collection of learning vocabulary, chunks, and idioms"
+    },
+    "classes/{classId}": {
+      "schema": "Classroom",
+      "description": "Collection of teacher classrooms"
+    }
+  }
+}
