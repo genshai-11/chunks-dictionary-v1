@@ -307,10 +307,12 @@ export default function TeacherDashboardAudioManager({
     }
   };
 
-  // Gather all items
+  // Gather only detailed lecture recordings. Vocabulary EN/VI pronunciation
+  // audio lives in teacher_audios with lang="en"/"vi" and is managed by Bulk Audio/TTS,
+  // so it must not appear in this lecture-recording board.
   const flattenedAudios: FlattenedAudioItem[] = entries.reduce((acc, entry) => {
     if (entry.teacher_audios && entry.teacher_audios.length > 0) {
-      entry.teacher_audios.forEach((audio) => {
+      entry.teacher_audios.filter((audio) => !audio.lang).forEach((audio) => {
         acc.push({
           ...audio,
           entry_id: entry.id,
@@ -1284,7 +1286,7 @@ export default function TeacherDashboardAudioManager({
       <div className="p-4 px-5 bg-orange-50/50 border-t border-neutral-200/60 flex items-start gap-2.5">
         <AlertCircle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
         <p className="text-[10px] text-neutral-500 leading-normal">
-          <strong>Lưu ý đồng bộ hóa:</strong> Mọi thao tác Xóa (hoặc Xóa hàng loạt) trên bảng Ghi âm này sẽ tự động loại bỏ trường <code>teacher_audios</code> của từ vựng tương ứng và cập nhật trực tiếp lên hệ thống cơ sở dữ liệu. Vui lòng cân nhắc kỹ trước khi xóa.
+          <strong>Lưu ý đồng bộ hóa:</strong> Mọi thao tác Xóa (hoặc Xóa hàng loạt) trên bảng Ghi âm này chỉ loại bỏ các bản ghi <strong>lời giảng chi tiết</strong> của từ vựng tương ứng. Audio đọc từ vựng EN/VI vẫn được giữ riêng theo <code>lang="en"</code>/<code>lang="vi"</code>.
         </p>
       </div>
 

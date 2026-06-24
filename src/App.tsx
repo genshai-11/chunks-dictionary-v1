@@ -36,8 +36,9 @@ import {
   Bot,
   Scissors
 } from "lucide-react";
-import { DictionaryEntry, ChunkColor, ExampleItem, RelatedTermItem } from "./types";
+import { DictionaryEntry, ChunkColor, ExampleItem, RelatedTermItem, TeacherAudioItem } from "./types";
 import { inferPosFromCategory } from "./lib/vocabularyMeta";
+import { getLectureAudioItem, getVocabularyAudioUrl, removeLectureAudio, replaceLectureAudio } from "./lib/audioMapping";
 import Navigation from "./components/Navigation";
 import AudioPlayerButton from "./components/AudioPlayerButton";
 import chunksLogoUrl from "../assets/.aistudio/logo.png";
@@ -430,9 +431,10 @@ export default function App() {
     window.speechSynthesis.cancel();
 
     // Check if there is an actual recorded custom explanation
-    const customAudioItem = entry.teacher_audios?.find(
-      (ta) => ta.audio_url && (ta.audio_url.startsWith("data:") || ta.audio_url.startsWith("blob:"))
-    );
+    const lectureAudioItem = getLectureAudioItem(entry);
+    const customAudioItem = lectureAudioItem && (lectureAudioItem.audio_url.startsWith("data:") || lectureAudioItem.audio_url.startsWith("blob:") || lectureAudioItem.audio_url.startsWith("http"))
+      ? lectureAudioItem
+      : undefined;
 
     if (customAudioItem) {
       try {
@@ -623,7 +625,7 @@ export default function App() {
       const base64Audio = reader.result as string;
       const duration = recordingSeconds || 5;
 
-      const newAudioItem = {
+      const newAudioItem: TeacherAudioItem = {
         id: `ta-${Date.now()}`,
         teacher_name: "Chunker",
         audio_url: base64Audio,
@@ -635,7 +637,7 @@ export default function App() {
         if (!prev) return prev;
         return {
           ...prev,
-          teacher_audios: [newAudioItem]
+          teacher_audios: replaceLectureAudio(prev, newAudioItem)
         };
       });
 
@@ -653,7 +655,7 @@ export default function App() {
       if (!prev) return prev;
       return {
         ...prev,
-        teacher_audios: []
+        teacher_audios: removeLectureAudio(prev)
       };
     });
   };
@@ -1215,7 +1217,7 @@ export default function App() {
                                     {item.vn}
                                   </h3>
                                   <div onClick={(e) => e.stopPropagation()} className="shrink-0 leading-none">
-                                    <AudioPlayerButton text={item.vn} lang="vi" size="sm" className="scale-90" />
+                                    <AudioPlayerButton text={item.vn} lang="vi" size="sm" className="scale-90" audioUrl={getVocabularyAudioUrl(item, "vi")} />
                                   </div>
                                 </div>
 
@@ -1224,7 +1226,7 @@ export default function App() {
                                     {item.en}
                                   </span>
                                   <div onClick={(e) => e.stopPropagation()} className="shrink-0 leading-none">
-                                    <AudioPlayerButton text={item.en} lang="en" size="sm" className="scale-90" audioUrl={item.teacher_audios?.[0]?.audio_url} />
+                                    <AudioPlayerButton text={item.en} lang="en" size="sm" className="scale-90" audioUrl={getVocabularyAudioUrl(item, "en")} />
                                   </div>
                                   {item.ipa && (
                                     <span className="text-[11px] md:text-xs text-neutral-500 font-mono">
@@ -1300,14 +1302,14 @@ export default function App() {
                                     {item.vn}
                                   </h3>
                                   <div onClick={(e) => e.stopPropagation()} className="shrink-0 leading-none">
-                                    <AudioPlayerButton text={item.vn} lang="vi" size="sm" className="scale-90" />
+                                    <AudioPlayerButton text={item.vn} lang="vi" size="sm" className="scale-90" audioUrl={getVocabularyAudioUrl(item, "vi")} />
                                   </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 flex-wrap text-red-605">
                                   <span className="font-sans font-bold text-xs md:text-sm truncate">{item.en}</span>
                                   <div onClick={(e) => e.stopPropagation()} className="shrink-0 leading-none">
-                                    <AudioPlayerButton text={item.en} lang="en" size="sm" className="scale-90" audioUrl={item.teacher_audios?.[0]?.audio_url} />
+                                    <AudioPlayerButton text={item.en} lang="en" size="sm" className="scale-90" audioUrl={getVocabularyAudioUrl(item, "en")} />
                                   </div>
                                   {item.ipa && (
                                     <span className="text-[11px] md:text-xs text-neutral-400 font-normal font-mono">
@@ -1588,7 +1590,7 @@ export default function App() {
                         <h2 className="text-xl md:text-2xl font-bold font-display uppercase tracking-wide text-neutral-800" id="detail-word-vn-title">
                           {renderHighlightedText(detailEntry.vn, highlightTerms, highlightClass)}
                         </h2>
-                        <AudioPlayerButton text={detailEntry.vn} lang="vi" size="sm" variant="circle" />
+                        <AudioPlayerButton text={detailEntry.vn} lang="vi" size="sm" variant="circle" audioUrl={getVocabularyAudioUrl(detailEntry, "vi")} />
                       </div>
                       <p className="text-neutral-500 font-sans text-xs md:text-sm uppercase font-bold tracking-wider shrink-0">
                         <span className="font-mono lowercase text-neutral-600 select-all">{detailEntry.ipa}</span>
@@ -1599,7 +1601,7 @@ export default function App() {
                       <p className="text-base md:text-lg font-bold font-sans tracking-wide select-all">
                         {detailEntry.en}
                       </p>
-                      <AudioPlayerButton text={detailEntry.en} size="md" variant="circle" audioUrl={detailEntry.teacher_audios?.[0]?.audio_url} />
+                      <AudioPlayerButton text={detailEntry.en} lang="en" size="md" variant="circle" audioUrl={getVocabularyAudioUrl(detailEntry, "en")} />
                     </div>
                   </div>
 
@@ -1649,8 +1651,8 @@ export default function App() {
                         
                         <span className="text-xs font-mono text-neutral-500 select-none shrink-0">
                           {isPlayingTeacherAudio 
-                            ? `0:${Math.floor((teacherAudioProgress / 100) * (detailEntry.teacher_audios?.[0]?.duration_sec || 45)).toString().padStart(2, "0")}`
-                            : `0:${(detailEntry.teacher_audios?.[0]?.duration_sec || 45).toString().padStart(2, "0")}`
+                            ? `0:${Math.floor((teacherAudioProgress / 100) * (getLectureAudioItem(detailEntry)?.duration_sec || 45)).toString().padStart(2, "0")}`
+                            : `0:${(getLectureAudioItem(detailEntry)?.duration_sec || 45).toString().padStart(2, "0")}`
                           }
                         </span>
                       </div>
@@ -2464,7 +2466,7 @@ export default function App() {
                           )}
                         </div>
 
-                        {editingEntry.teacher_audios && editingEntry.teacher_audios.length > 0 ? (
+                        {getLectureAudioItem(editingEntry) ? (
                           <div className="bg-white rounded-xl border border-neutral-200 p-3.5 space-y-3 shadow-2xs">
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex items-center gap-2.5">
@@ -2476,10 +2478,10 @@ export default function App() {
                                     Bản ghi âm gốc đã liên kết
                                   </span>
                                   <p className="text-xs font-extrabold text-neutral-800">
-                                    Chunker: {editingEntry.teacher_audios[0].teacher_name || "Chunker"}
+                                    Chunker: {getLectureAudioItem(editingEntry)?.teacher_name || "Chunker"}
                                   </p>
                                   <p className="text-[10px] text-neutral-400 font-medium">
-                                    Thời lượng: ~{editingEntry.teacher_audios[0].duration_sec} giây • Ngày ghi: {new Date(editingEntry.teacher_audios[0].created_at || Date.now()).toLocaleDateString("vi-VN")}
+                                    Thời lượng: ~{getLectureAudioItem(editingEntry)?.duration_sec || 0} giây • Ngày ghi: {new Date(getLectureAudioItem(editingEntry)?.created_at || Date.now()).toLocaleDateString("vi-VN")}
                                   </p>
                                 </div>
                               </div>
@@ -2497,7 +2499,7 @@ export default function App() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const hasAud = editingEntry.teacher_audios?.[0]?.audio_url;
+                                  const hasAud = getLectureAudioItem(editingEntry)?.audio_url;
                                   if (!hasAud) return;
                                   if (isPlaybackPreviewing) {
                                     if (previewAudioInstance) {

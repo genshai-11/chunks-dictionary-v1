@@ -3,6 +3,7 @@ import { ListFilter, Search, Edit2, Trash2, CheckSquare, Square, Check, BookOpen
 import { DictionaryEntry, ChunkColor } from "../types";
 import AudioPlayerButton from "./AudioPlayerButton";
 import { inferPosFromCategory } from "../lib/vocabularyMeta";
+import { getVocabularyAudioUrl } from "../lib/audioMapping";
 
 const categoryColorMeta: Record<ChunkColor, { dot: string }> = {
   green: { dot: "bg-emerald-500" },
@@ -90,7 +91,7 @@ export default function TeacherDashboardVocabulary({
         return !e.teacher_audios || e.teacher_audios.length === 0;
       }
       if (filterMissing === "missing_tts") {
-        const hasEn = e.teacher_audios?.some(a => a.lang === "en" || !a.lang);
+        const hasEn = e.teacher_audios?.some(a => a.lang === "en");
         const hasVi = e.teacher_audios?.some(a => a.lang === "vi");
         const hasAllEx = e.examples && e.examples.length > 0 ? e.examples.every(ex => !!ex.audio_url) : true;
         return !hasEn || !hasVi || !hasAllEx;
@@ -289,7 +290,7 @@ export default function TeacherDashboardVocabulary({
       let anyChange = false;
 
       // 1. English headword TTS
-      const hasEnAudio = entry.teacher_audios?.some(a => a.lang === "en" || !a.lang);
+      const hasEnAudio = entry.teacher_audios?.some(a => a.lang === "en");
       if (!hasEnAudio) {
         setTtsLogs(prev => [...prev, `   - Đang tạo âm tiếng Anh cho: "${entry.en}"...`]);
         try {
@@ -623,13 +624,13 @@ export default function TeacherDashboardVocabulary({
                           text={item.en} 
                           lang="en" 
                           size="sm" 
-                          audioUrl={item.teacher_audios?.find(a => a.lang === "en" || !a.lang)?.audio_url} 
+                          audioUrl={getVocabularyAudioUrl(item, "en")} 
                         />
                         <AudioPlayerButton 
                           text={item.vn} 
                           lang="vi" 
                           size="sm" 
-                          audioUrl={item.teacher_audios?.find(a => a.lang === "vi")?.audio_url} 
+                          audioUrl={getVocabularyAudioUrl(item, "vi")} 
                         />
                       </div>
                     </div>
@@ -694,8 +695,8 @@ export default function TeacherDashboardVocabulary({
 
             <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="flex items-center gap-2 bg-neutral-50 rounded-xl border border-neutral-150 p-3">
-                <AudioPlayerButton text={previewItem.en} lang="en" size="sm" audioUrl={previewItem.teacher_audios?.find(a => a.lang === "en" || !a.lang)?.audio_url} />
-                <AudioPlayerButton text={previewItem.vn} lang="vi" size="sm" audioUrl={previewItem.teacher_audios?.find(a => a.lang === "vi")?.audio_url} />
+                <AudioPlayerButton text={previewItem.en} lang="en" size="sm" audioUrl={getVocabularyAudioUrl(previewItem, "en")} />
+                <AudioPlayerButton text={previewItem.vn} lang="vi" size="sm" audioUrl={getVocabularyAudioUrl(previewItem, "vi")} />
                 <span className="text-xs text-neutral-500 font-semibold">Nghe nhanh EN / VI</span>
               </div>
 

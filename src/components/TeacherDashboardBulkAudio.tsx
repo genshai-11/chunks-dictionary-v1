@@ -116,7 +116,9 @@ export default function TeacherDashboardBulkAudio({
       item.en.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.vn.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const hasAudio = item.teacher_audios && item.teacher_audios.length > 0;
+    const hasVocabularyAudioEn = item.teacher_audios?.some((audio) => audio.lang === "en");
+    const hasVocabularyAudioVi = item.teacher_audios?.some((audio) => audio.lang === "vi");
+    const hasAudio = !!hasVocabularyAudioEn && !!hasVocabularyAudioVi;
     const matchesMissing = !missingAudioOnly || !hasAudio;
 
     return matchesColor && matchesSearch && matchesMissing;
@@ -275,7 +277,7 @@ export default function TeacherDashboardBulkAudio({
           let anyChange = false;
 
           // 1. English Headword
-          const hasEnAudio = currentEntry.teacher_audios?.some(a => a.lang === "en" || !a.lang);
+          const hasEnAudio = currentEntry.teacher_audios?.some(a => a.lang === "en");
           if (!hasEnAudio) {
             addLog("info", `   - Đang tạo âm tiếng Anh cho "${currentEntry.en}"...`);
             const ttsResponse = await fetch("/api/tts", {
@@ -844,7 +846,9 @@ export default function TeacherDashboardBulkAudio({
                     currentVocabularyTargets.map((item) => {
                       const id = item.id;
                       const isSelected = selectedWordIds.includes(id);
-                      const hasAudio = item.teacher_audios && item.teacher_audios.length > 0;
+                      const hasVocabularyAudioEn = item.teacher_audios?.some((audio) => audio.lang === "en");
+                      const hasVocabularyAudioVi = item.teacher_audios?.some((audio) => audio.lang === "vi");
+                      const hasAudio = !!hasVocabularyAudioEn && !!hasVocabularyAudioVi;
                       const colorMeta = categoryColorMeta[item.color];
 
                       return (
@@ -898,7 +902,7 @@ export default function TeacherDashboardBulkAudio({
                           <td className="p-3 text-center">
                             {hasAudio ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-100 uppercase">
-                                ✓ Có ({item.teacher_audios?.length})
+                                ✓ Có EN + VI
                               </span>
                             ) : (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-neutral-100 text-neutral-500 uppercase">
