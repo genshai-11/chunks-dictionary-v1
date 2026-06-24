@@ -48,7 +48,7 @@ export default function TeacherDashboardAudioManager({
   // State for Add Section
   const [showAddSection, setShowAddSection] = useState(false);
   const [addSelectedEntryId, setAddSelectedEntryId] = useState("");
-  const [addTeacherName, setAddTeacherName] = useState("Cô Lan Chi");
+  const [addTeacherName, setAddTeacherName] = useState("Chunker");
   const [addRecordingDuration, setAddRecordingDuration] = useState(0);
   const [isAddRecording, setIsAddRecording] = useState(false);
   const [addAudioRecordedUrl, setAddAudioRecordedUrl] = useState<string | null>(null);
@@ -801,7 +801,7 @@ export default function TeacherDashboardAudioManager({
                           type="text"
                           value={addTeacherName}
                           onChange={(e) => setAddTeacherName(e.target.value)}
-                          placeholder="Thầy Mark, Cô Lan Chi..."
+                          placeholder="Thầy Mark, Chunker..."
                           className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-sans focus:outline-none focus:ring-1 focus:ring-[#c10b0d] bg-white"
                         />
                       </div>
@@ -1457,7 +1457,7 @@ export default function TeacherDashboardAudioManager({
                       value={editTeacherName}
                       onChange={(e) => setEditTeacherName(e.target.value)}
                       className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-xs font-sans focus:outline-none focus:ring-1 focus:ring-red-500 bg-neutral-50/50"
-                      placeholder="ví dụ: Cô Lan Chi..."
+                      placeholder="ví dụ: Chunker..."
                     />
                   </div>
 

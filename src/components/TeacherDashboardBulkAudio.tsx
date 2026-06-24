@@ -36,7 +36,7 @@ export default function TeacherDashboardBulkAudio({
 }: TeacherDashboardBulkAudioProps) {
   // Config state
   const [targetType, setTargetType] = useState<"headwords" | "examples">("headwords");
-  const [speakerName, setSpeakerName] = useState("Sophia AI (TTS)");
+  const [speakerName, setSpeakerName] = useState("Chunks AI");
   const [exampleAudioMode, setExampleAudioMode] = useState<"en" | "vi" | "full">("en");
   const [defaultPlaybackSpeed, setDefaultPlaybackSpeed] = useState<number>(() => {
     const stored = Number(localStorage.getItem("ninerouter_playback_speed") || "1");
@@ -613,14 +613,14 @@ export default function TeacherDashboardBulkAudio({
 
             {/* Audio speaker input */}
             <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-neutral-500 block">Tên Giáo Viên AI (Speaker Label)</label>
+              <label className="text-[11px] font-bold uppercase text-neutral-500 block">Tên Chunks AI (Speaker Label)</label>
               <input
                 type="text"
                 value={speakerName}
                 onChange={(e) => setSpeakerName(e.target.value)}
                 disabled={isRunning}
                 className="w-full text-xs p-2.5 bg-white border border-neutral-200 rounded-lg focus:ring-1 focus:ring-red-400 focus:outline-none focus:bg-white"
-                placeholder="Ví dụ: Sophia AI Speaker..."
+                placeholder="Ví dụ: Chunks AI Speaker..."
               />
             </div>
 

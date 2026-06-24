@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { ListFilter, Search, Edit2, Trash2, CheckSquare, Square, Check, BookOpen, AlertCircle, Volume2, Pause, Loader2 } from "lucide-react";
+import { ListFilter, Search, Edit2, Trash2, CheckSquare, Square, Check, BookOpen, AlertCircle, Volume2, Pause, Loader2, X } from "lucide-react";
 import { DictionaryEntry, ChunkColor } from "../types";
 import AudioPlayerButton from "./AudioPlayerButton";
+import { inferPosFromCategory } from "../lib/vocabularyMeta";
 
 const categoryColorMeta: Record<ChunkColor, { dot: string }> = {
   green: { dot: "bg-emerald-500" },
@@ -27,6 +28,7 @@ export default function TeacherDashboardVocabulary({
   const [filterMissing, setFilterMissing] = useState<string>("all"); 
   const [filterLevel, setFilterLevel] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [previewItem, setPreviewItem] = useState<DictionaryEntry | null>(null);
   const [showBatchEditModal, setShowBatchEditModal] = useState(false);
   const [batchEditForm, setBatchEditForm] = useState({
     color: "",
@@ -146,7 +148,10 @@ export default function TeacherDashboardVocabulary({
       if (!entry) continue;
 
       const updates: any = {};
-      if (batchEditForm.color) updates.color = batchEditForm.color;
+      if (batchEditForm.color) {
+        updates.color = batchEditForm.color;
+        if (!batchEditForm.pos) updates.pos = inferPosFromCategory(batchEditForm.color);
+      }
       if (batchEditForm.status) updates.status = batchEditForm.status;
       if (batchEditForm.pos) updates.pos = batchEditForm.pos;
       if (batchEditForm.level) updates.level = batchEditForm.level;
@@ -300,7 +305,7 @@ export default function TeacherDashboardVocabulary({
               const mockDuration = Math.max(1, Math.round(entry.en.length * 0.12));
               const newAudio = {
                 id: `ai-voice-en-${entry.en.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`,
-                teacher_name: "Sophia AI (TTS)",
+                teacher_name: "Chunks AI",
                 audio_url: base64Audio,
                 duration_sec: mockDuration,
                 created_at: new Date().toISOString(),
@@ -336,7 +341,7 @@ export default function TeacherDashboardVocabulary({
               const mockDuration = Math.max(1, Math.round(entry.vn.length * 0.15));
               const newAudio = {
                 id: `ai-voice-vi-${entry.vn.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`,
-                teacher_name: "Sophia AI (TTS)",
+                teacher_name: "Chunks AI",
                 audio_url: base64Audio,
                 duration_sec: mockDuration,
                 created_at: new Date().toISOString(),
@@ -480,6 +485,21 @@ export default function TeacherDashboardVocabulary({
             <option value="pink">💗 Key Terms (Từ khóa)</option>
           </select>
 
+          {filterMissing === "missing_examples" && filteredEntries.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedIds(filteredEntries.map(e => e.id));
+                setAiProgress(0);
+                setAiLogs([]);
+                setShowAIBatchModal(true);
+              }}
+              className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center gap-1 shadow-sm shrink-0"
+            >
+              <span className="text-sm">🪄</span> Tạo ví dụ cho {filteredEntries.length} mục thiếu
+            </button>
+          )}
+
           {filterMissing === "missing_tts" && filteredEntries.length > 0 && (
             <button
               type="button"
@@ -621,7 +641,7 @@ export default function TeacherDashboardVocabulary({
 
                 <div className="flex items-center gap-2 shrink-0 ml-7 sm:ml-0" onClick={e => e.stopPropagation()}>
                   <button
-                    onClick={() => openDetail(item)}
+                    onClick={() => setPreviewItem(item)}
                     className="p-1.5 border border-neutral-200 hover:bg-neutral-50 text-neutral-600 rounded-lg flex items-center gap-1.5 text-xs font-medium cursor-pointer"
                     title="Xem trước"
                   >
@@ -648,6 +668,73 @@ export default function TeacherDashboardVocabulary({
         )}
       </div>
     </div>
+
+      {previewItem && (
+        <div className="fixed inset-0 bg-neutral-900/60 flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setPreviewItem(null)}>
+          <div className="relative bg-white rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-neutral-150 flex items-start justify-between gap-4 bg-neutral-50/80">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#c10b0d]">Xem trước mục từ vựng</span>
+                <h3 className="text-lg font-black text-neutral-900 uppercase leading-tight">
+                  {previewItem.vn} <span className="text-[#c10b0d]">({previewItem.en})</span>
+                </h3>
+                <p className="text-xs text-neutral-500 font-mono">
+                  {previewItem.color} • {previewItem.pos} • {previewItem.level || "easy"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewItem(null)}
+                className="p-2 hover:bg-neutral-200 text-neutral-500 rounded-lg transition-colors"
+                title="Đóng xem trước"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="flex items-center gap-2 bg-neutral-50 rounded-xl border border-neutral-150 p-3">
+                <AudioPlayerButton text={previewItem.en} lang="en" size="sm" audioUrl={previewItem.teacher_audios?.find(a => a.lang === "en" || !a.lang)?.audio_url} />
+                <AudioPlayerButton text={previewItem.vn} lang="vi" size="sm" audioUrl={previewItem.teacher_audios?.find(a => a.lang === "vi")?.audio_url} />
+                <span className="text-xs text-neutral-500 font-semibold">Nghe nhanh EN / VI</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="bg-white border border-neutral-150 rounded-xl p-3">
+                  <span className="block text-[10px] uppercase font-black text-neutral-400 mb-1">IPA</span>
+                  <span className="font-mono text-neutral-800">{previewItem.ipa || "—"}</span>
+                </div>
+                <div className="bg-white border border-neutral-150 rounded-xl p-3">
+                  <span className="block text-[10px] uppercase font-black text-neutral-400 mb-1">Status</span>
+                  <span className="font-bold text-neutral-800">{previewItem.status || "draft"}</span>
+                </div>
+              </div>
+
+              <div className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 space-y-2">
+                <h4 className="text-xs font-black uppercase text-[#c10b0d]">Định nghĩa</h4>
+                <p className="text-sm text-neutral-700 leading-relaxed">{previewItem.definition || "Chưa có định nghĩa tiếng Việt."}</p>
+                {previewItem.definition_en && (
+                  <p className="text-xs text-neutral-500 leading-relaxed italic">{previewItem.definition_en}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-xs font-black uppercase text-neutral-700">Ví dụ ({previewItem.examples?.length || 0})</h4>
+                {previewItem.examples && previewItem.examples.length > 0 ? (
+                  previewItem.examples.slice(0, 5).map((ex) => (
+                    <div key={ex.id} className="border border-neutral-150 rounded-xl p-3 bg-neutral-50/60 space-y-1">
+                      <p className="text-sm font-bold text-neutral-850">{ex.text_en}</p>
+                      <p className="text-xs text-neutral-500">{ex.text_vn}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-orange-700 bg-orange-50 border border-orange-100 rounded-xl p-3 font-semibold">Mục này đang thiếu ví dụ. Dùng filter “Thiếu ví dụ” để chạy tạo ví dụ AI hàng loạt.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showBatchEditModal && (
         <div className="fixed inset-0 bg-neutral-900/60 flex items-center justify-center p-4 z-50">
@@ -819,7 +906,7 @@ export default function TeacherDashboardVocabulary({
             {!isTtsRunning && ttsProgress === 0 ? (
               <div className="space-y-4">
                 <p className="text-xs text-neutral-500 leading-relaxed font-semibold">
-                  Hệ thống sẽ tạo tts bản xứ chất lượng cao bằng AI (Sophia TTS) cho các từ vựng đã chọn. Tiến trình gồm:
+                  Hệ thống sẽ tạo tts bản xứ chất lượng cao bằng AI (Chunks AI) cho các từ vựng đã chọn. Tiến trình gồm:
                 </p>
                 <ul className="text-xs text-neutral-600 space-y-1.5 list-disc pl-4 font-semibold">
                   <li>Tạo Audio Tiếng Anh của từ vựng (<span className="text-red-655 font-bold">en</span>) nếu chưa có</li>

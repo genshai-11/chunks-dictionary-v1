@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { DictionaryEntry, ChunkColor, ExampleItem } from "../types";
 import { initAuth, googleSignIn, logout } from "../lib/firebase";
+import { inferPosFromCategory } from "../lib/vocabularyMeta";
 import { User } from "firebase/auth";
 
 interface TeacherDashboardBulkImportProps {
@@ -39,6 +40,11 @@ interface ParsedImportItem {
   pos: string;
   ipa: string;
   definition: string;
+  definition_en: string;
+  level: 'easy' | 'medium' | 'hard';
+  tags: string[];
+  image_url: string;
+  note_text: string;
   status: 'published' | 'draft';
   examples: ExampleItem[];
   rowNumber: number;
@@ -46,16 +52,15 @@ interface ParsedImportItem {
   isDuplicate: boolean;
 }
 
-const TEMPLATE_BASIC = `en,vn,color,pos,ipa,definition
-"no free lunch","không có bữa ăn nào miễn phí","red","idiom","nəʊ friː lʌntʃ","Cụm từ chỉ việc mọi thứ đều có chi phí ngầm."
-"bear in mind","hãy ghi nhớ trong đầu","blue","phrase","beə ɪn maɪnd","Nhắc nhở đối phương chú ý một chi tiết."
-"to have butterflies","bồn chồn lo lắng","red","idiom","tʊ hæv ˈbʌtəflaɪz","Cảm xúc lo sợ phấp phỏng trước cuộc phỏng vấn."
-"essentially","về cơ bản là","green","adverb","ɪˈsenʃli","Dùng bổ trợ kết nối câu chêm xen."`;
+const TEMPLATE_BASIC = `en,vn,color,pos,ipa,level,definition,definition_en,tags,image_url,note_text,status
+"no free lunch","không có bữa ăn nào miễn phí","red","","nəʊ friː lʌntʃ","medium","Cụm từ chỉ việc mọi thứ đều có chi phí ngầm.","An idiom used to show every benefit has a hidden cost.","idiom,cost,life","","Dùng khi nhắc học viên về đánh đổi trong lựa chọn.","published"
+"bear in mind","hãy ghi nhớ trong đầu","blue","","beə ɪn maɪnd","easy","Nhắc nhở đối phương chú ý một chi tiết.","A sentence frame for reminding someone to remember something.","sentence-frame,reminder","","Nhấn nhẹ ở bear và mind.","published"
+"essentially","về cơ bản là","green","","ɪˈsenʃli","easy","Dùng bổ trợ kết nối câu chêm xen.","A gap filler to summarize the core idea.","gap-filler,summary","","Dùng ở đầu câu để làm mềm lập luận.","draft"`;
 
-const TEMPLATE_ADVANCED = `en,vn,color,pos,ipa,definition,status,example_en_1,example_vn_1,example_en_2,example_vn_2
-"hands down","chắc chắn là, không bàn cãi","red","phrase","hændz daʊn","Dùng để khẳng định một điều gì đó là tuyệt đối và xuất sắc nhất.","published","This is hands down the best phở in town.","Đây chắc chắn là món phở ngon nhất thị trấn rồi.","He is hands down the fastest runner.","Cậu ấy chắc chắn là người chạy nhanh nhất không cần bàn cãi."
-"at the end of the day","sau tất cả, cuối cùng thì","green","phrase","æt ði end əv ðə deɪ","Nhấn mạnh điểm quan trọng hoặc kết quả chung cuộc.","draft","At the end of the day, it is your choice.","Sau tất cả, đó vẫn là sự lựa chọn của bạn.","",""
-"leverage","tối ưu hóa, tận dụng","pink","verb","ˈliːvərɪdʒ","Tận dụng một nguồn hoặc lợi thế sẵn có để đạt kết quả tốt nhất.","published","We must leverage our technology network.","Chúng ta phải tận dụng tối đa mạng lưới công nghệ của mình.","",""`;
+const TEMPLATE_ADVANCED = `en,vn,color,pos,ipa,level,definition,definition_en,tags,image_url,note_text,status,example_en_1,example_vn_1,example_en_2,example_vn_2,example_en_3,example_vn_3
+"hands down","chắc chắn là, không bàn cãi","red","","hændz daʊn","medium","Dùng để khẳng định một điều gì đó là tuyệt đối và xuất sắc nhất.","Used to say something is clearly the best.","idiom,confidence","","Đọc liền hands-down như một cụm.","published","This is hands down the best phở in town.","Đây chắc chắn là món phở ngon nhất thị trấn rồi.","He is hands down the fastest runner.","Cậu ấy chắc chắn là người chạy nhanh nhất không cần bàn cãi.","",""
+"at the end of the day","sau tất cả, cuối cùng thì","green","","æt ði end əv ðə deɪ","easy","Nhấn mạnh điểm quan trọng hoặc kết quả chung cuộc.","A discourse phrase used to state the final point.","gap-filler,summary","","Dùng trước kết luận chính.","draft","At the end of the day, it is your choice.","Sau tất cả, đó vẫn là sự lựa chọn của bạn.","","","",""
+"leverage","tối ưu hóa, tận dụng","pink","","ˈliːvərɪdʒ","hard","Tận dụng một nguồn hoặc lợi thế sẵn có để đạt kết quả tốt nhất.","To use a resource or advantage effectively.","business,key-term","","Từ công sở, nhấn âm đầu.","published","We must leverage our technology network.","Chúng ta phải tận dụng tối đa mạng lưới công nghệ của mình.","","","",""`;
 
 export default function TeacherDashboardBulkImport({
   entries,
@@ -132,7 +137,8 @@ export default function TeacherDashboardBulkImport({
 
       // 2. Format structure rows matching standard importer criteria
       const headerRow = [
-        "en", "vn", "color", "pos", "ipa", "definition", "status",
+        "en", "vn", "color", "pos", "ipa", "level", "definition", "definition_en",
+        "tags", "image_url", "note_text", "status",
         "example_en_1", "example_vn_1", "example_en_2", "example_vn_2", "example_en_3", "example_vn_3"
       ];
 
@@ -144,7 +150,12 @@ export default function TeacherDashboardBulkImport({
           item.color || "pink",
           item.pos || "phrase",
           item.ipa || "",
+          item.level || "easy",
           item.definition || "",
+          item.definition_en || "",
+          (item.tags || []).join(","),
+          item.image_url || "",
+          item.note_text || "",
           item.status || "draft",
           ex1 ? ex1.text_en : "",
           ex1 ? ex1.text_vn : "",
@@ -221,7 +232,8 @@ export default function TeacherDashboardBulkImport({
 
     try {
       const headerRow = [
-        "en", "vn", "color", "pos", "ipa", "definition", "status",
+        "en", "vn", "color", "pos", "ipa", "level", "definition", "definition_en",
+        "tags", "image_url", "note_text", "status",
         "example_en_1", "example_vn_1", "example_en_2", "example_vn_2", "example_en_3", "example_vn_3"
       ];
 
@@ -233,7 +245,12 @@ export default function TeacherDashboardBulkImport({
           item.color || "pink",
           item.pos || "phrase",
           item.ipa || "",
+          item.level || "easy",
           item.definition || "",
+          item.definition_en || "",
+          (item.tags || []).join(","),
+          item.image_url || "",
+          item.note_text || "",
           item.status || "draft",
           ex1 ? ex1.text_en : "",
           ex1 ? ex1.text_vn : "",
@@ -493,12 +510,18 @@ export default function TeacherDashboardBulkImport({
         else if (["red", "idiom", "slang"].includes(rawColor)) finalColor = "red";
         else if (["pink", "key term", "vocabulary", "word"].includes(rawColor)) finalColor = "pink";
 
-        const rawPos = (row.pos || row["loại từ"] || "phrase").trim();
+        const rawPos = (row.pos || row["loại từ"] || "").trim() || inferPosFromCategory(finalColor);
         const rawIpa = (row.ipa || row["phát âm"] || "").trim();
         const rawDef = (row.definition || row.explanation || row["giải thích"] || row["định nghĩa"] || "").trim();
+        const rawDefEn = (row.definition_en || row["definition en"] || row["định nghĩa anh"] || "").trim();
+        const rawTags = (row.tags || row["thẻ"] || row["tag"] || "").split(/[;,]/).map(t => t.trim()).filter(Boolean);
+        const rawImageUrl = (row.image_url || row.image || row["ảnh"] || row["ảnh minh họa"] || "").trim();
+        const rawNoteText = (row.note_text || row.note || row["lưu ý"] || row["ghi chú"] || "").trim();
         
         let rawStatus = (row.status || row["trạng thái"] || "draft").trim().toLowerCase();
         let finalStatus: "published" | "draft" = rawStatus === "published" ? "published" : "draft";
+        const rawLevel = (row.level || row["mức độ"] || "easy").trim().toLowerCase();
+        const finalLevel: "easy" | "medium" | "hard" = rawLevel === "hard" || rawLevel === "khó" ? "hard" : rawLevel === "medium" || rawLevel === "vừa" ? "medium" : "easy";
 
         // Collect examples structured nicely
         const examples: ExampleItem[] = [];
@@ -535,6 +558,11 @@ export default function TeacherDashboardBulkImport({
           pos: rawPos,
           ipa: rawIpa,
           definition: rawDef,
+          definition_en: rawDefEn,
+          level: finalLevel,
+          tags: rawTags,
+          image_url: rawImageUrl,
+          note_text: rawNoteText,
           status: finalStatus,
           examples,
           rowNumber: rowNum,
@@ -630,6 +658,11 @@ export default function TeacherDashboardBulkImport({
           pos: item.pos,
           ipa: item.ipa,
           definition: item.definition,
+          definition_en: item.definition_en,
+          level: item.level,
+          tags: item.tags,
+          image_url: item.image_url,
+          note_text: item.note_text,
           examples: item.examples,
           related_terms: [],
           teacher_audios: [],

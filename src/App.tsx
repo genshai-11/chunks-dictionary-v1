@@ -37,6 +37,7 @@ import {
   Scissors
 } from "lucide-react";
 import { DictionaryEntry, ChunkColor, ExampleItem, RelatedTermItem } from "./types";
+import { inferPosFromCategory } from "./lib/vocabularyMeta";
 import Navigation from "./components/Navigation";
 import AudioPlayerButton from "./components/AudioPlayerButton";
 import chunksLogoUrl from "../assets/.aistudio/logo.png";
@@ -624,7 +625,7 @@ export default function App() {
 
       const newAudioItem = {
         id: `ta-${Date.now()}`,
-        teacher_name: "Cô Lan Chi",
+        teacher_name: "Chunker",
         audio_url: base64Audio,
         duration_sec: duration,
         created_at: new Date().toISOString()
@@ -641,7 +642,7 @@ export default function App() {
       setAudioBlob(null);
       setPreviewAudioUrl(null);
       setRecordingSeconds(0);
-      setAppAlertMessage("Đã ghi nhận bài nói giảng giải của Giáo Viên! Hãy bấm nút 'Lưu & Phát Bản' để lưu lại thay đổi này vào từ điển.");
+      setAppAlertMessage("Đã ghi nhận bài nói giảng giải của Chunker! Hãy bấm nút 'Lưu & Phát Bản' để lưu lại thay đổi này vào từ điển.");
     };
 
     reader.readAsDataURL(audioBlob);
@@ -730,7 +731,7 @@ export default function App() {
         vn: "",
         en: "",
         color: "pink",
-        pos: "phrase",
+        pos: inferPosFromCategory("pink"),
         ipa: "",
         definition: "",
         definition_en: "",
@@ -2265,9 +2266,8 @@ export default function App() {
 
           {/* VIEW: Redesigned Workspace split, incorporating real-time high-fidelity Student Card Live Preview */}
           {activeTab === "teacher-editor" && editingEntry && (() => {
-            const previewChunkerName = localStorage.getItem("chunker_name") || "Cô Lan Chi";
+            const previewChunkerName = localStorage.getItem("chunker_name") || "Chunker";
             const previewChunkerAvatar = localStorage.getItem("chunker_avatar") || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop";
-            const previewChunkerRole = localStorage.getItem("chunker_role") || "Giáo Viên Chuyên Môn";
 
             return (
               <motion.div
@@ -2352,7 +2352,10 @@ export default function App() {
                           <label className="text-[10px] font-bold uppercase text-neutral-400 tracking-wider block">Cấu trúc phân màu (Category)</label>
                           <select
                             value={editingEntry.color || "pink"}
-                            onChange={(e) => setEditingEntry({ ...editingEntry, color: e.target.value as ChunkColor })}
+                            onChange={(e) => {
+                              const color = e.target.value as ChunkColor;
+                              setEditingEntry({ ...editingEntry, color, pos: inferPosFromCategory(color) });
+                            }}
                             className="w-full px-3.5 py-2 sm:py-2.5 bg-neutral-50/50 border border-neutral-200 rounded-lg text-xs font-bold focus:bg-white transition-colors cursor-pointer"
                           >
                             <option value="pink">🌸 Pink - Key Terms (Từ vựng)</option>
@@ -2368,7 +2371,7 @@ export default function App() {
                             type="text"
                             value={editingEntry.pos || ""}
                             onChange={(e) => setEditingEntry({ ...editingEntry, pos: e.target.value })}
-                            placeholder="e.g. noun, phrase, idiom"
+                            placeholder="Tự map theo Category, vẫn có thể sửa tay"
                             className="w-full px-3.5 py-2 sm:py-2.5 bg-neutral-50/50 border border-neutral-200 rounded-lg text-xs focus:outline-none transition-colors"
                           />
                         </div>
@@ -2472,7 +2475,7 @@ export default function App() {
                                     Bản ghi âm gốc đã liên kết
                                   </span>
                                   <p className="text-xs font-extrabold text-neutral-800">
-                                    Giáo viên: {editingEntry.teacher_audios[0].teacher_name || "Cô Lan Chi"}
+                                    Chunker: {editingEntry.teacher_audios[0].teacher_name || "Chunker"}
                                   </p>
                                   <p className="text-[10px] text-neutral-400 font-medium">
                                     Thời lượng: ~{editingEntry.teacher_audios[0].duration_sec} giây • Ngày ghi: {new Date(editingEntry.teacher_audios[0].created_at || Date.now()).toLocaleDateString("vi-VN")}
@@ -2855,9 +2858,6 @@ export default function App() {
                             />
                           </div>
                           <div>
-                            <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-650 block leading-tight">
-                              {previewChunkerRole}
-                            </span>
                             <h5 className="font-extrabold text-neutral-800 text-xs font-sans">
                               {previewChunkerName}
                             </h5>

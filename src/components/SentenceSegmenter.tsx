@@ -304,7 +304,7 @@ export default function SentenceSegmenter({ onNavigateToDetail, entries }: Sente
       url: "https://images.unsplash.com/photo-1614741118887-7a4ee193a5fa?q=80&w=300&auto=format&fit=crop"
     },
     {
-      name: "Cô Lan Chi (Teacher)",
+      name: "Chunker",
       url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=300&auto=format&fit=crop"
     }
   ];

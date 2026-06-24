@@ -13,7 +13,7 @@ export const INITIAL_ENTRIES: DictionaryEntry[] = [
     image_url: "https://images.unsplash.com/photo-1582966772680-860e372bb558?q=80&w=800&auto=format&fit=crop",
     tags: ["dép cao su", "giày sandal", "đôi", "summeressentials", "vietnamculture", "streetstyle"],
     status: "published",
-    created_by: "Cô Lan Chi",
+    created_by: "Chunker",
     updated_at: "2026-06-04T10:23:44Z",
     examples: [
       {
@@ -76,8 +76,8 @@ export const INITIAL_ENTRIES: DictionaryEntry[] = [
     teacher_audios: [
       {
         id: "ta-dl-1",
-        teacher_name: "Cô Lan Chi",
-        audio_url: "preset-lan-chi-explain",
+        teacher_name: "Chunker",
+        audio_url: "preset-chunker-explain",
         duration_sec: 45,
         created_at: "2026-06-04T10:23:44Z"
       }
@@ -96,7 +96,7 @@ export const INITIAL_ENTRIES: DictionaryEntry[] = [
     image_url: "https://images.unsplash.com/photo-1516414447565-b14be0adf13e?q=80&w=800&auto=format&fit=crop",
     tags: ["idioms", "speaking", "summarize", "everydayvocabulary"],
     status: "published",
-    created_by: "Cô Lan Chi",
+    created_by: "Chunker",
     updated_at: "2026-06-04T10:23:44Z",
     examples: [
       {
@@ -181,7 +181,7 @@ export const INITIAL_ENTRIES: DictionaryEntry[] = [
     image_url: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=800&auto=format&fit=crop",
     tags: ["idioms", "memory", "speaking"],
     status: "published",
-    created_by: "Cô Lan Chi",
+    created_by: "Chunker",
     updated_at: "2026-06-04T10:23:44Z",
     examples: [
       {
@@ -261,7 +261,7 @@ export const INITIAL_ENTRIES: DictionaryEntry[] = [
     image_url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop",
     tags: ["sentenceframes", "honesty", "speakingstyle", "communication"],
     status: "published",
-    created_by: "Cô Lan Chi",
+    created_by: "Chunker",
     updated_at: "2026-06-04T10:23:44Z",
     examples: [
       {
@@ -300,7 +300,7 @@ export const INITIAL_ENTRIES: DictionaryEntry[] = [
     image_url: "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=800&auto=format&fit=crop",
     tags: ["idioms", "obvious", "conversational"],
     status: "published",
-    created_by: "Cô Lan Chi",
+    created_by: "Chunker",
     updated_at: "2026-06-04T10:23:44Z",
     examples: [
       {
@@ -374,7 +374,7 @@ export const INITIAL_ENTRIES: DictionaryEntry[] = [
     image_url: "https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?q=80&w=800&auto=format&fit=crop",
     tags: ["gapfillers", "transition", "speakingstyle"],
     status: "published",
-    created_by: "Cô Lan Chi",
+    created_by: "Chunker",
     updated_at: "2026-06-04T10:23:44Z",
     examples: [
       {
@@ -413,7 +413,7 @@ export const INITIAL_ENTRIES: DictionaryEntry[] = [
     image_url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=800&auto=format&fit=crop",
     tags: ["gapfillers", "natural", "speaking"],
     status: "published",
-    created_by: "Cô Lan Chi",
+    created_by: "Chunker",
     updated_at: "2026-06-04T10:23:44Z",
     examples: [
       {
