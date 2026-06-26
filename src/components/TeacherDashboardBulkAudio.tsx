@@ -417,6 +417,7 @@ export default function TeacherDashboardBulkAudio({
           resolvedModel = localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural";
         } else if (exampleAudioMode === "full") {
           speechText = `${targetExample.text_en}. Nghĩa là: ${targetExample.text_vn}`;
+          resolvedModel = localStorage.getItem("ninerouter_tts_codemix_model") || localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural";
         }
 
         const loopHeaders = { ...headers };
@@ -598,7 +599,7 @@ export default function TeacherDashboardBulkAudio({
                 >
                   <option value="en">🇺🇸 Chỉ tiếng Anh (English Only)</option>
                   <option value="vi">🇻🇳 Chỉ tiếng Việt (Vietnamese Only)</option>
-                  <option value="full">🗣️ Cả hai (English + Nghĩa là + Vietnamese)</option>
+                  <option value="full">🗣️ Cả hai / code-mixing model (English + Nghĩa là + Vietnamese)</option>
                 </select>
               </div>
             )}

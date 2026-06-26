@@ -41,6 +41,9 @@ export default function TeacherDashboard9RouterSettings() {
   const [ttsVietnameseModel, setTtsVietnameseModel] = useState(() => {
     return localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural";
   });
+  const [ttsCodemixModel, setTtsCodemixModel] = useState(() => {
+    return localStorage.getItem("ninerouter_tts_codemix_model") || localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural";
+  });
   const [useCustomSTT, setUseCustomSTT] = useState(() => {
     return localStorage.getItem("ninerouter_use_custom_stt") === "true";
   });
@@ -132,6 +135,7 @@ export default function TeacherDashboard9RouterSettings() {
       localStorage.setItem("ninerouter_stt_model", sttModel.trim());
       localStorage.setItem("ninerouter_tts_model", ttsModel.trim());
       localStorage.setItem("ninerouter_tts_vietnamese_model", ttsVietnameseModel.trim());
+      localStorage.setItem("ninerouter_tts_codemix_model", ttsCodemixModel.trim());
       localStorage.setItem("ninerouter_use_custom_stt", String(useCustomSTT));
       localStorage.setItem("ninerouter_playback_speed", String(playbackSpeed));
 
@@ -693,6 +697,30 @@ export default function TeacherDashboard9RouterSettings() {
                     ))}
                   </datalist>
                 </div>
+              </div>
+
+              {/* TTS Model Select (Code-mixing / bilingual examples) */}
+              <div className="space-y-1.5">
+                <label className="font-sans font-medium text-xs text-[#5b5350] uppercase tracking-wide block">
+                  Mô hình Text-To-Speech Code-mixing / Câu song ngữ
+                </label>
+                <div className="relative">
+                  <input
+                    list="tts-codemix-options-list"
+                    value={ttsCodemixModel}
+                    onChange={(e) => setTtsCodemixModel(e.target.value)}
+                    placeholder="Nhập model riêng cho câu Việt pha English..."
+                    className="w-full bg-[#FFFDFA] border border-[#E3DACD] px-4 py-3 font-sans text-sm rounded-lg focus:ring-1 focus:ring-[#960005] focus:border-[#960005] transition-all"
+                  />
+                  <datalist id="tts-codemix-options-list">
+                    {ttsOptions.map((opt) => (
+                      <option key={opt} value={opt} />
+                    ))}
+                  </datalist>
+                </div>
+                <span className="text-[11px] text-[#5b5350] block">
+                  Dùng riêng khi Bulk Audio tạo audio cho ví dụ dạng code-mixing hoặc full bilingual “English + Nghĩa là + Vietnamese”.
+                </span>
               </div>
 
               {/* Teacher-only synchronized playback speed */}

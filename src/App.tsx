@@ -34,7 +34,8 @@ import {
   FolderInput,
   Library,
   Bot,
-  Scissors
+  Scissors,
+  GripVertical
 } from "lucide-react";
 import { DictionaryEntry, ChunkColor, ExampleItem, RelatedTermItem, TeacherAudioItem } from "./types";
 import { inferPosFromCategory } from "./lib/vocabularyMeta";
@@ -216,6 +217,9 @@ export default function App() {
   const [editingEntry, setEditingEntry] = useState<Partial<DictionaryEntry> | null>(null);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isCodemixGenerating, setIsCodemixGenerating] = useState(false);
+  const [editorAiExampleCount, setEditorAiExampleCount] = useState(3);
+  const [editorAiExampleType, setEditorAiExampleType] = useState<"full_english" | "code_mixing" | "both">("full_english");
+  const [draggedExampleIndex, setDraggedExampleIndex] = useState<number | null>(null);
   const [dbStatusMsg, setDbStatusMsg] = useState("");
   const [teacherSubTab, setTeacherSubTab] = useState<'vocabulary' | 'recommendations' | 'audios' | 'bulk-import' | 'bulk-audio' | '9router-settings' | 'segment'>('vocabulary');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -799,12 +803,13 @@ export default function App() {
     }
   };
 
-  // AI-powered generator trigger using Server API (Claude Gemini 3.5 Flash)
+  // AI-powered generator trigger using Server API (Claude Gemini 3.5 Flash / 9Router LLM)
   const generateAiExamples = async () => {
     if (!editingEntry?.en) {
       setAppAlertMessage("Vui lòng ghi cụm tiếng Anh trước khi gọi AI!");
       return;
     }
+    const safeCount = Math.max(1, Math.min(10, Number(editorAiExampleCount) || 3));
     setIsAiGenerating(true);
     try {
       const res = await fetch("/api/ai/examples", {
@@ -812,6 +817,8 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...editingEntry,
+          count: safeCount,
+          type: editorAiExampleType,
           ninerouter_url: localStorage.getItem("ninerouter_url") || "",
           ninerouter_key: localStorage.getItem("ninerouter_key") || "",
           ninerouter_llm_model: localStorage.getItem("ninerouter_llm_model") || ""
@@ -824,13 +831,13 @@ export default function App() {
           ...editingEntry,
           examples: [...currentExamples, ...data.map((item, i) => ({
             id: `ai-ex-${Date.now()}-${i}`,
-            type: "normal" as const,
+            type: (editorAiExampleType === "code_mixing" || (editorAiExampleType === "both" && /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐ]/i.test(item.text_en)) ? "codemix" : item.type || "normal") as "normal" | "codemix",
             text_en: item.text_en,
             text_vn: item.text_vn
           }))]
         });
       } else {
-        setAppAlertMessage("Lỗi tải ví dụ từ Gemini. Hãy đảm bảo API key được cấu hình.");
+        setAppAlertMessage("Lỗi tải ví dụ từ AI. Hãy đảm bảo API key/model được cấu hình.");
       }
     } catch (e) {
       console.error("AI examples error:", e);
@@ -905,6 +912,14 @@ export default function App() {
       const updated = current.filter((_, i) => i !== index);
       setEditingEntry({ ...editingEntry, related_terms: updated });
     }
+  };
+
+  const moveExample = (fromIndex: number, toIndex: number) => {
+    const current = [...(editingEntry?.examples || [])];
+    if (fromIndex < 0 || toIndex < 0 || fromIndex >= current.length || toIndex >= current.length || fromIndex === toIndex) return;
+    const [moved] = current.splice(fromIndex, 1);
+    current.splice(toIndex, 0, moved);
+    setEditingEntry({ ...editingEntry, examples: current });
   };
 
   const handleVoiceSearchResult = (matched: DictionaryEntry[], transcript: string) => {
@@ -2707,7 +2722,29 @@ export default function App() {
                         </div>
 
                         {/* Smart AI Engines integration */}
-                        <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                          <label className="flex items-center gap-1 text-[10px] font-bold text-neutral-500 uppercase">
+                            Số câu
+                            <input
+                              type="number"
+                              min={1}
+                              max={10}
+                              value={editorAiExampleCount}
+                              onChange={(e) => setEditorAiExampleCount(Math.max(1, Math.min(10, Number(e.target.value) || 1)))}
+                              className="w-14 px-2 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs font-mono text-neutral-800"
+                            />
+                          </label>
+
+                          <select
+                            value={editorAiExampleType}
+                            onChange={(e) => setEditorAiExampleType(e.target.value as "full_english" | "code_mixing" | "both")}
+                            className="px-2.5 py-1.5 bg-white border border-neutral-200 text-neutral-700 text-[10px] font-extrabold uppercase tracking-wide rounded-lg focus:outline-none focus:ring-1 focus:ring-red-400"
+                          >
+                            <option value="full_english">Anh-Anh</option>
+                            <option value="code_mixing">Code-mixing</option>
+                            <option value="both">Cả hai</option>
+                          </select>
+
                           <button
                             id="editor-btn-ai-examples"
                             onClick={generateAiExamples}
@@ -2719,21 +2756,7 @@ export default function App() {
                             ) : (
                               <Sparkles className="w-3 h-3 text-amber-300" />
                             )}
-                            Tạo 3 ví dụ chuẩn
-                          </button>
-
-                          <button
-                            id="editor-btn-ai-codemix"
-                            onClick={generateAiCodemix}
-                            disabled={isCodemixGenerating || !editingEntry.en}
-                            className="px-2.5 py-1.5 bg-neutral-100 border border-neutral-200 hover:bg-neutral-200 text-neutral-850 text-[10px] font-extrabold uppercase tracking-wide rounded-lg flex items-center gap-1 transition-all disabled:opacity-50 cursor-pointer"
-                          >
-                            {isCodemixGenerating ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Sparkles className="w-3 h-3 text-pink-500 animate-spin" style={{ animationDuration: '3s' }} />
-                            )}
-                            Bilingual Mix
+                            Tạo ví dụ AI
                           </button>
                         </div>
                       </div>
@@ -2742,8 +2765,26 @@ export default function App() {
                         {editingEntry.examples?.map((ex, idx) => (
                           <div
                             key={ex.id || idx}
-                            className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200/60 flex items-start gap-3"
+                            draggable
+                            onDragStart={(e) => {
+                              setDraggedExampleIndex(idx);
+                              e.dataTransfer.effectAllowed = "move";
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = "move";
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (draggedExampleIndex !== null) moveExample(draggedExampleIndex, idx);
+                              setDraggedExampleIndex(null);
+                            }}
+                            onDragEnd={() => setDraggedExampleIndex(null)}
+                            className={`p-3.5 bg-neutral-50 rounded-xl border flex items-start gap-3 transition-all ${draggedExampleIndex === idx ? "border-red-250 opacity-60 scale-[0.99]" : "border-neutral-200/60"}`}
                           >
+                            <div className="pt-3 cursor-grab active:cursor-grabbing text-neutral-350 hover:text-neutral-600" title="Kéo để đổi thứ tự ví dụ">
+                              <GripVertical className="w-4 h-4" />
+                            </div>
                             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
                               <div className="space-y-1">
                                 <label className="text-[9px] font-extrabold uppercase text-neutral-400 tracking-wider">Câu Tiếng Anh (English / Code-mixed)</label>
