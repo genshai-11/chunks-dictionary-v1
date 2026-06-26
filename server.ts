@@ -1068,14 +1068,64 @@ dictionaryRouter.post("/tts", async (req, res) => {
     }
 
     const cleanText = text.trim();
-    if (ttsCache[cleanText]) {
-      return res.json({ audio: ttsCache[cleanText] });
-    }
+
+    const ttsProvider = (req.headers["x-tts-provider"] as string) || "ninerouter";
+    const googleApiKey = (req.headers["x-google-ai-key"] as string) || "";
+    const googleTtsModel = (req.headers["x-google-tts-model"] as string) || "gemini-2.5-flash-preview-tts";
+    const googleTtsVoice = (req.headers["x-google-tts-voice"] as string) || "Kore";
 
     // Check if custom 9Router config is provided in headers
     const nrUrl = req.headers["x-ninerouter-url"] as string;
     const nrKey = req.headers["x-ninerouter-key"] as string;
     const nrModel = req.headers["x-ninerouter-tts-model"] as string;
+
+    const cacheKey = ttsProvider === "google-gemini"
+      ? `google-gemini:${googleTtsModel}:${googleTtsVoice}:${cleanText}`
+      : nrUrl && nrModel
+        ? `9router:${nrUrl}:${nrModel}:${cleanText}`
+        : `gemini-env:${cleanText}`;
+
+    if (ttsCache[cacheKey]) {
+      return res.json({ audio: ttsCache[cacheKey] });
+    }
+
+    if (ttsProvider === "google-gemini") {
+      const key = googleApiKey || process.env.GEMINI_API_KEY || "";
+      if (!key || key === "MY_GEMINI_API_KEY") {
+        return res.status(400).json({ error: "Google Gemini API key is required for TTS." });
+      }
+
+      console.log(`[Google Gemini TTS] Generating audio with model: ${googleTtsModel}, voice: ${googleTtsVoice}`);
+      const googleClient = new GoogleGenAI({
+        apiKey: key,
+        httpOptions: {
+          headers: {
+            "User-Agent": "chunks-dictionary-tts",
+          },
+        },
+      });
+
+      const googleResponse = await googleClient.models.generateContent({
+        model: googleTtsModel,
+        contents: [{ parts: [{ text: `Read naturally and clearly: ${cleanText}` }] }],
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: googleTtsVoice },
+            },
+          },
+        },
+      });
+
+      const googleBase64Audio = googleResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (googleBase64Audio) {
+        ttsCache[cacheKey] = googleBase64Audio;
+        return res.json({ audio: googleBase64Audio });
+      }
+
+      return res.status(500).json({ error: "Google Gemini TTS did not return audio." });
+    }
 
     if (nrUrl && nrModel) {
       console.log(`Routing TTS to 9Router at ${nrUrl} with model: ${nrModel}`);
@@ -1101,7 +1151,7 @@ dictionaryRouter.post("/tts", async (req, res) => {
 
         const data: any = await nrResponse.json();
         if (data && data.audio) {
-          ttsCache[cleanText] = data.audio;
+          ttsCache[cacheKey] = data.audio;
           return res.json({ audio: data.audio });
         } else {
           throw new Error("No audio property in 9Router response");
@@ -1129,7 +1179,7 @@ dictionaryRouter.post("/tts", async (req, res) => {
 
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     if (base64Audio) {
-      ttsCache[cleanText] = base64Audio;
+      ttsCache[cacheKey] = base64Audio;
       res.json({ audio: base64Audio });
     } else {
       res.status(500).json({ error: "TTS generation failed to return audio stream." });

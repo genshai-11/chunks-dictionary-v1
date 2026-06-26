@@ -18,6 +18,7 @@ import {
   Pause
 } from "lucide-react";
 import { DictionaryEntry, ChunkColor, ExampleItem, TeacherAudioItem } from "../types";
+import { buildTtsHeaders } from "../lib/ttsGateway";
 
 interface TeacherDashboardBulkAudioProps {
   entries: DictionaryEntry[];
@@ -234,18 +235,8 @@ export default function TeacherDashboardBulkAudio({
     // Helper sleep function
     const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    const nrUrl = localStorage.getItem("ninerouter_url") || "";
-    const nrKey = localStorage.getItem("ninerouter_key") || "";
-    const nrModel = localStorage.getItem("ninerouter_tts_model") || "";
-
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (nrUrl && nrModel) {
-      headers["x-ninerouter-url"] = nrUrl;
-      if (nrKey) {
-        headers["x-ninerouter-key"] = nrKey;
-      }
-      headers["x-ninerouter-tts-model"] = nrModel;
-    }
+    const nrModel = localStorage.getItem("ninerouter_tts_model") || "edge-tts/en-US-JennyNeural";
+    const headers = buildTtsHeaders(nrModel);
 
     let localSuccess = 0;
     let localFail = 0;
@@ -314,10 +305,7 @@ export default function TeacherDashboardBulkAudio({
           if (forceRegenerate || !hasViAudio) {
             addLog("info", `   - Đang tạo âm tiếng Việt cho "${currentEntry.vn}"...`);
             const nrModelVi = localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural";
-            const headersVi = { ...headers };
-            if (nrUrl && nrModelVi) {
-              headersVi["x-ninerouter-tts-model"] = nrModelVi;
-            }
+            const headersVi = buildTtsHeaders(nrModelVi);
 
             const ttsResponseVi = await fetch("/api/tts", {
               method: "POST",
@@ -420,14 +408,7 @@ export default function TeacherDashboardBulkAudio({
           resolvedModel = localStorage.getItem("ninerouter_tts_codemix_model") || localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural";
         }
 
-        const loopHeaders = { ...headers };
-        if (nrUrl && resolvedModel) {
-          loopHeaders["x-ninerouter-url"] = nrUrl;
-          if (nrKey) {
-            loopHeaders["x-ninerouter-key"] = nrKey;
-          }
-          loopHeaders["x-ninerouter-tts-model"] = resolvedModel;
-        }
+        const loopHeaders = buildTtsHeaders(resolvedModel);
 
         addLog("info", `⏳ [${i + 1}/${selectedExampleIds.length}] Đang sinh âm cho ví dụ: "${speechText.substring(0, 45)}..."`);
 

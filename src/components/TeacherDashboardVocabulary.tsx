@@ -3,6 +3,7 @@ import { ListFilter, Search, Edit2, Trash2, CheckSquare, Square, Check, BookOpen
 import { DictionaryEntry, ChunkColor } from "../types";
 import AudioPlayerButton from "./AudioPlayerButton";
 import { inferPosFromCategory } from "../lib/vocabularyMeta";
+import { buildTtsHeaders } from "../lib/ttsGateway";
 import { getVocabularyAudioUrl } from "../lib/audioMapping";
 
 const categoryColorMeta: Record<ChunkColor, { dot: string }> = {
@@ -254,22 +255,11 @@ export default function TeacherDashboardVocabulary({
     stopTtsRef.current = false;
     setTtsLogs(["🚀 Khởi động tiến trình tạo TTS hàng loạt cho " + selectedIds.length + " cụm từ..."]);
 
-    const nrUrl = localStorage.getItem("ninerouter_url") || "";
-    const nrKey = localStorage.getItem("ninerouter_key") || "";
     const nrModelEn = localStorage.getItem("ninerouter_tts_model") || "edge-tts/en-US-JennyNeural";
     const nrModelVi = localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural";
 
-    const headersEn: Record<string, string> = { "Content-Type": "application/json" };
-    if (nrUrl && nrModelEn) {
-      headersEn["x-ninerouter-url"] = nrUrl;
-      if (nrKey) headersEn["x-ninerouter-key"] = nrKey;
-      headersEn["x-ninerouter-tts-model"] = nrModelEn;
-    }
-
-    const headersVi: Record<string, string> = { ...headersEn };
-    if (nrUrl && nrModelVi) {
-      headersVi["x-ninerouter-tts-model"] = nrModelVi;
-    }
+    const headersEn = buildTtsHeaders(nrModelEn);
+    const headersVi = buildTtsHeaders(nrModelVi);
 
     for (let i = 0; i < selectedIds.length; i++) {
       if (stopTtsRef.current) {

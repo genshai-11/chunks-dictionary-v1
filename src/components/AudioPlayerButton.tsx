@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { buildTtsHeaders } from "../lib/ttsGateway";
 import { Square, Volume2, Loader2 } from "lucide-react";
 
 interface AudioPlayerButtonProps {
@@ -97,21 +98,12 @@ export default function AudioPlayerButton({
     }
 
     try {
-      // Read configured 9Router settings from localStorage
-      const nrUrl = localStorage.getItem("ninerouter_url") || "";
-      const nrKey = localStorage.getItem("ninerouter_key") || "";
+      // Read teacher-selected TTS gateway from localStorage.
+      // Google Gemini is used only for TTS when selected; examples/LLM stay on 9Router.
       const nrModel = resolvedLang === "vi"
         ? (localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural")
         : (localStorage.getItem("ninerouter_tts_model") || "edge-tts/en-US-JennyNeural");
-
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (nrUrl && nrModel) {
-        headers["x-ninerouter-url"] = nrUrl;
-        if (nrKey) {
-          headers["x-ninerouter-key"] = nrKey;
-        }
-        headers["x-ninerouter-tts-model"] = nrModel;
-      }
+      const headers = buildTtsHeaders(nrModel);
 
       // 1. Try our high-quality Gemini / 9Router TTS endpoint
       const response = await fetch("/api/tts", {

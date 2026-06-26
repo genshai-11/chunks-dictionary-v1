@@ -29,6 +29,18 @@ export default function TeacherDashboard9RouterSettings() {
   const [apiKey, setApiKey] = useState(() => {
     return localStorage.getItem("ninerouter_key") || "";
   });
+  const [ttsProvider, setTtsProvider] = useState<"ninerouter" | "google-gemini">(() => {
+    return localStorage.getItem("tts_gateway_provider") === "google-gemini" ? "google-gemini" : "ninerouter";
+  });
+  const [googleApiKey, setGoogleApiKey] = useState(() => {
+    return localStorage.getItem("google_ai_api_key") || "";
+  });
+  const [googleTtsModel, setGoogleTtsModel] = useState(() => {
+    return localStorage.getItem("google_tts_model") || "gemini-2.5-flash-preview-tts";
+  });
+  const [googleTtsVoice, setGoogleTtsVoice] = useState(() => {
+    return localStorage.getItem("google_tts_voice") || "Kore";
+  });
   const [llmModel, setLlmModel] = useState(() => {
     return localStorage.getItem("ninerouter_llm_model") || "gpt-4o";
   });
@@ -54,6 +66,7 @@ export default function TeacherDashboard9RouterSettings() {
 
   // Password visibility
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showGoogleApiKey, setShowGoogleApiKey] = useState(false);
 
   // Discovery lists
   const [discoveredLLM, setDiscoveredLLM] = useState<string[]>([]);
@@ -118,6 +131,8 @@ export default function TeacherDashboard9RouterSettings() {
     "edge-tts/en-US-JennyNeural",
     "edge-tts/en-US-GuyNeural"
   ];
+  const defaultGoogleTTSModels = ["gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"];
+  const defaultGoogleTTSVoices = ["Kore", "Puck", "Charon", "Fenrir", "Leda", "Orus", "Aoede", "Zephyr"];
 
   const llmOptions = discoveredLLM.length > 0 ? discoveredLLM : defaultLLMs;
   const sttOptions = discoveredSTT.length > 0 ? discoveredSTT : defaultSTTs;
@@ -131,6 +146,10 @@ export default function TeacherDashboard9RouterSettings() {
     setTimeout(() => {
       localStorage.setItem("ninerouter_url", endpoint.trim());
       localStorage.setItem("ninerouter_key", apiKey.trim());
+      localStorage.setItem("tts_gateway_provider", ttsProvider);
+      localStorage.setItem("google_ai_api_key", googleApiKey.trim());
+      localStorage.setItem("google_tts_model", googleTtsModel.trim());
+      localStorage.setItem("google_tts_voice", googleTtsVoice.trim());
       localStorage.setItem("ninerouter_llm_model", llmModel.trim());
       localStorage.setItem("ninerouter_stt_model", sttModel.trim());
       localStorage.setItem("ninerouter_tts_model", ttsModel.trim());
@@ -215,6 +234,23 @@ export default function TeacherDashboard9RouterSettings() {
     }
   };
 
+  const buildTestTtsHeaders = (nrModel: string): Record<string, string> => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (ttsProvider === "google-gemini") {
+      headers["x-tts-provider"] = "google-gemini";
+      if (googleApiKey.trim()) headers["x-google-ai-key"] = googleApiKey.trim();
+      headers["x-google-tts-model"] = googleTtsModel.trim() || "gemini-2.5-flash-preview-tts";
+      headers["x-google-tts-voice"] = googleTtsVoice.trim() || "Kore";
+      return headers;
+    }
+    if (endpoint.trim() && nrModel.trim()) {
+      headers["x-ninerouter-url"] = endpoint.trim();
+      if (apiKey.trim()) headers["x-ninerouter-key"] = apiKey.trim();
+      headers["x-ninerouter-tts-model"] = nrModel.trim();
+    }
+    return headers;
+  };
+
   // Test Synthesis TTS (Convert test text to voice)
   const handleTestTTS = async () => {
     if (!ttsText.trim()) {
@@ -226,15 +262,10 @@ export default function TeacherDashboard9RouterSettings() {
     setSynthesizedAudio(null);
 
     try {
-      const response = await fetch("/api/9router/test-tts", {
+      const response = await fetch("/api/tts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          endpoint: endpoint.trim(),
-          apiKey: apiKey.trim(),
-          model: ttsModel.trim(),
-          text: ttsText.trim(),
-        }),
+        headers: buildTestTtsHeaders(ttsModel.trim()),
+        body: JSON.stringify({ text: ttsText.trim() }),
       });
 
       if (!response.ok) {
@@ -292,15 +323,10 @@ export default function TeacherDashboard9RouterSettings() {
     setSynthesizedAudioVi(null);
 
     try {
-      const response = await fetch("/api/9router/test-tts", {
+      const response = await fetch("/api/tts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          endpoint: endpoint.trim(),
-          apiKey: apiKey.trim(),
-          model: ttsVietnameseModel.trim(),
-          text: ttsVietnameseText.trim(),
-        }),
+        headers: buildTestTtsHeaders(ttsVietnameseModel.trim()),
+        body: JSON.stringify({ text: ttsVietnameseText.trim() }),
       });
 
       if (!response.ok) {
@@ -509,10 +535,10 @@ export default function TeacherDashboard9RouterSettings() {
       {/* Page Heading */}
       <header className="mb-8 pl-4 py-1.5 border-l-[6px] border-[#960005]">
         <h1 className="font-display text-4xl uppercase tracking-wider text-[#201a19] font-bold">
-          Cấu hình Hệ thống AI Gateway (9Router)
+          Cấu hình AI Gateway & TTS
         </h1>
         <p className="font-sans text-[#5b5350] mt-1.5 text-base">
-          Quản lý kết nối API, mô hình ngôn ngữ và công cụ thử nghiệm AI Lab cho Dictionary Chunks.
+          LLM tạo câu dùng 9Router; riêng Text-To-Speech có thể chọn 9Router hoặc Google Gemini.
         </p>
       </header>
 
@@ -525,7 +551,7 @@ export default function TeacherDashboard9RouterSettings() {
             <div className="flex items-center gap-2.5 border-b border-[#E3DACD]/60 pb-4 mb-5">
               <Link className="w-5 h-5 text-[#960005]" />
               <h2 className="font-sans font-bold text-[#201a19] text-lg uppercase tracking-wide">
-                Thông số kết nối 9Router
+                Thông số kết nối 9Router & Google Gemini TTS
               </h2>
             </div>
 
@@ -571,7 +597,51 @@ export default function TeacherDashboard9RouterSettings() {
                   </button>
                 </div>
                 <span className="text-[11px] text-[#5b5350]">
-                  Khóa cấp quyền truy cập để gọi dịch vụ dịch thoại và dịch nghĩa tự động.
+                  Khóa cấp quyền truy cập 9Router cho LLM tạo câu, STT và TTS nếu chọn 9Router.
+                </span>
+              </div>
+
+              {/* TTS Provider */}
+              <div className="space-y-1.5 border-t border-[#E3DACD]/40 pt-4">
+                <label className="font-sans font-medium text-xs text-[#5b5350] uppercase tracking-wide block">
+                  Nguồn tạo Text-To-Speech
+                </label>
+                <select
+                  value={ttsProvider}
+                  onChange={(e) => setTtsProvider(e.target.value as "ninerouter" | "google-gemini")}
+                  className="w-full bg-[#FFFDFA] border border-[#E3DACD] px-4 py-3 font-sans text-sm rounded-lg focus:ring-1 focus:ring-[#960005] focus:border-[#960005] transition-all"
+                >
+                  <option value="ninerouter">9Router / Edge TTS (mặc định)</option>
+                  <option value="google-gemini">Google Gemini TTS only</option>
+                </select>
+                <span className="text-[11px] text-[#5b5350] block">
+                  Chỉ áp dụng cho tạo/phát audio. Sinh câu ví dụ, code-mixing và phân tích câu vẫn dùng LLM 9Router phía dưới.
+                </span>
+              </div>
+
+              {/* Google Gemini API Key for TTS only */}
+              <div className="space-y-1.5">
+                <label className="font-sans font-medium text-xs text-[#5b5350] uppercase tracking-wide block">
+                  Google Gemini API Key (chỉ TTS)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showGoogleApiKey ? "text" : "password"}
+                    value={googleApiKey}
+                    onChange={(e) => setGoogleApiKey(e.target.value)}
+                    placeholder="Dán API key Google AI Studio tại đây — không lưu trong source code"
+                    className="w-full bg-[#FFFDFA] border border-[#E3DACD] px-4 py-3 font-mono text-sm rounded-lg focus:ring-1 focus:ring-[#960005] focus:border-[#960005] pr-12 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowGoogleApiKey(!showGoogleApiKey)}
+                    className="absolute right-3.5 top-3.5 text-[#5b5350] hover:text-[#201a19]"
+                  >
+                    {showGoogleApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <span className="text-[11px] text-amber-700 block">
+                  Vì key đã từng được chia sẻ trong chat, nên sau khi test ổn hãy rotate/revoke key cũ trên Google AI Studio/Cloud Console.
                 </span>
               </div>
             </div>
@@ -720,6 +790,48 @@ export default function TeacherDashboard9RouterSettings() {
                 </div>
                 <span className="text-[11px] text-[#5b5350] block">
                   Dùng riêng khi Bulk Audio tạo audio cho ví dụ dạng code-mixing hoặc full bilingual “English + Nghĩa là + Vietnamese”.
+                </span>
+              </div>
+
+              {/* Google Gemini TTS model/voice */}
+              <div className="space-y-3 border-t border-[#E3DACD]/40 pt-4 mt-3">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="font-sans font-medium text-xs text-[#5b5350] uppercase tracking-wide block">
+                    Google Gemini TTS Model
+                  </label>
+                  <span className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100">
+                    Chỉ audio
+                  </span>
+                </div>
+                <input
+                  list="google-tts-model-options-list"
+                  value={googleTtsModel}
+                  onChange={(e) => setGoogleTtsModel(e.target.value)}
+                  placeholder="gemini-2.5-flash-preview-tts"
+                  className="w-full bg-[#FFFDFA] border border-[#E3DACD] px-4 py-3 font-sans text-sm rounded-lg focus:ring-1 focus:ring-[#960005] focus:border-[#960005] transition-all"
+                />
+                <datalist id="google-tts-model-options-list">
+                  {defaultGoogleTTSModels.map((opt) => (
+                    <option key={opt} value={opt} />
+                  ))}
+                </datalist>
+                <label className="font-sans font-medium text-xs text-[#5b5350] uppercase tracking-wide block pt-1">
+                  Google Voice
+                </label>
+                <input
+                  list="google-tts-voice-options-list"
+                  value={googleTtsVoice}
+                  onChange={(e) => setGoogleTtsVoice(e.target.value)}
+                  placeholder="Kore"
+                  className="w-full bg-[#FFFDFA] border border-[#E3DACD] px-4 py-3 font-sans text-sm rounded-lg focus:ring-1 focus:ring-[#960005] focus:border-[#960005] transition-all"
+                />
+                <datalist id="google-tts-voice-options-list">
+                  {defaultGoogleTTSVoices.map((opt) => (
+                    <option key={opt} value={opt} />
+                  ))}
+                </datalist>
+                <span className="text-[11px] text-[#5b5350] block">
+                  Khi “Nguồn tạo TTS” là Google Gemini, toàn bộ nút phát và Bulk Audio sẽ dùng model/voice này. LLM tạo câu vẫn dùng 9Router.
                 </span>
               </div>
 
