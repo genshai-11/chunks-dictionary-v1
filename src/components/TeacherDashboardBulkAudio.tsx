@@ -399,6 +399,7 @@ export default function TeacherDashboardBulkAudio({
 
         let speechText = targetExample.text_en;
         let resolvedModel = nrModel;
+        let providerOverride: "inherit" | "ninerouter" | "google-gemini" = "inherit";
         
         if (exampleAudioMode === "vi") {
           speechText = targetExample.text_vn;
@@ -406,11 +407,13 @@ export default function TeacherDashboardBulkAudio({
         } else if (exampleAudioMode === "full") {
           speechText = `${targetExample.text_en}. Nghĩa là: ${targetExample.text_vn}`;
           resolvedModel = localStorage.getItem("ninerouter_tts_codemix_model") || localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural";
+          const storedProvider = localStorage.getItem("tts_codemix_provider");
+          providerOverride = storedProvider === "ninerouter" || storedProvider === "google-gemini" ? storedProvider : "inherit";
         }
 
-        const loopHeaders = buildTtsHeaders(resolvedModel);
+        const loopHeaders = buildTtsHeaders(resolvedModel, providerOverride);
 
-        addLog("info", `⏳ [${i + 1}/${selectedExampleIds.length}] Đang sinh âm cho ví dụ: "${speechText.substring(0, 45)}..."`);
+        addLog("info", `⏳ [${i + 1}/${selectedExampleIds.length}] Đang sinh âm cho ví dụ: "${speechText.substring(0, 45)}..."${exampleAudioMode === "full" && providerOverride === "google-gemini" ? " bằng Google Gemini TTS" : ""}`);
 
         try {
           // Call API TTS

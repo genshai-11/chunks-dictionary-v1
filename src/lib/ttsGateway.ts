@@ -1,12 +1,13 @@
 export type TtsGatewayProvider = "ninerouter" | "google-gemini";
+export type TtsProviderOverride = TtsGatewayProvider | "inherit";
 
 export function getTtsGatewayProvider(): TtsGatewayProvider {
   return localStorage.getItem("tts_gateway_provider") === "google-gemini" ? "google-gemini" : "ninerouter";
 }
 
-export function buildTtsHeaders(ninerouterModel?: string): Record<string, string> {
+export function buildTtsHeaders(ninerouterModel?: string, providerOverride: TtsProviderOverride = "inherit"): Record<string, string> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const provider = getTtsGatewayProvider();
+  const provider = providerOverride === "inherit" ? getTtsGatewayProvider() : providerOverride;
 
   if (provider === "google-gemini") {
     headers["x-tts-provider"] = "google-gemini";

@@ -56,6 +56,10 @@ export default function TeacherDashboard9RouterSettings() {
   const [ttsCodemixModel, setTtsCodemixModel] = useState(() => {
     return localStorage.getItem("ninerouter_tts_codemix_model") || localStorage.getItem("ninerouter_tts_vietnamese_model") || "edge-tts/vi-VN-HoaiMyNeural";
   });
+  const [ttsCodemixProvider, setTtsCodemixProvider] = useState<"inherit" | "ninerouter" | "google-gemini">(() => {
+    const stored = localStorage.getItem("tts_codemix_provider");
+    return stored === "ninerouter" || stored === "google-gemini" ? stored : "inherit";
+  });
   const [useCustomSTT, setUseCustomSTT] = useState(() => {
     return localStorage.getItem("ninerouter_use_custom_stt") === "true";
   });
@@ -155,6 +159,7 @@ export default function TeacherDashboard9RouterSettings() {
       localStorage.setItem("ninerouter_tts_model", ttsModel.trim());
       localStorage.setItem("ninerouter_tts_vietnamese_model", ttsVietnameseModel.trim());
       localStorage.setItem("ninerouter_tts_codemix_model", ttsCodemixModel.trim());
+      localStorage.setItem("tts_codemix_provider", ttsCodemixProvider);
       localStorage.setItem("ninerouter_use_custom_stt", String(useCustomSTT));
       localStorage.setItem("ninerouter_playback_speed", String(playbackSpeed));
 
@@ -770,17 +775,27 @@ export default function TeacherDashboard9RouterSettings() {
               </div>
 
               {/* TTS Model Select (Code-mixing / bilingual examples) */}
-              <div className="space-y-1.5">
+              <div className="space-y-3">
                 <label className="font-sans font-medium text-xs text-[#5b5350] uppercase tracking-wide block">
                   Mô hình Text-To-Speech Code-mixing / Câu song ngữ
                 </label>
+                <select
+                  value={ttsCodemixProvider}
+                  onChange={(e) => setTtsCodemixProvider(e.target.value as "inherit" | "ninerouter" | "google-gemini")}
+                  className="w-full bg-[#FFFDFA] border border-[#E3DACD] px-4 py-3 font-sans text-sm rounded-lg focus:ring-1 focus:ring-[#960005] focus:border-[#960005] transition-all"
+                >
+                  <option value="inherit">Theo nguồn TTS chung ({ttsProvider === "google-gemini" ? "Google Gemini" : "9Router"})</option>
+                  <option value="ninerouter">9Router riêng cho code-mixing</option>
+                  <option value="google-gemini">Google Gemini riêng cho code-mixing</option>
+                </select>
                 <div className="relative">
                   <input
                     list="tts-codemix-options-list"
                     value={ttsCodemixModel}
                     onChange={(e) => setTtsCodemixModel(e.target.value)}
                     placeholder="Nhập model riêng cho câu Việt pha English..."
-                    className="w-full bg-[#FFFDFA] border border-[#E3DACD] px-4 py-3 font-sans text-sm rounded-lg focus:ring-1 focus:ring-[#960005] focus:border-[#960005] transition-all"
+                    disabled={ttsCodemixProvider === "google-gemini"}
+                    className="w-full bg-[#FFFDFA] border border-[#E3DACD] px-4 py-3 font-sans text-sm rounded-lg focus:ring-1 focus:ring-[#960005] focus:border-[#960005] transition-all disabled:bg-neutral-100 disabled:text-neutral-400"
                   />
                   <datalist id="tts-codemix-options-list">
                     {ttsOptions.map((opt) => (
@@ -789,7 +804,7 @@ export default function TeacherDashboard9RouterSettings() {
                   </datalist>
                 </div>
                 <span className="text-[11px] text-[#5b5350] block">
-                  Dùng riêng khi Bulk Audio tạo audio cho ví dụ dạng code-mixing hoặc full bilingual “English + Nghĩa là + Vietnamese”.
+                  Dùng khi Bulk Audio tạo audio “Cả hai / code-mixing model”. Nếu chọn Google Gemini, app sẽ dùng Google Gemini TTS model/voice ở phần bên dưới; ô model 9Router này sẽ được bỏ qua.
                 </span>
               </div>
 
