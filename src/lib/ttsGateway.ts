@@ -14,9 +14,9 @@ export function buildTtsHeaders(ninerouterModel?: string, providerOverride: TtsP
     const googleKey = localStorage.getItem("google_ai_api_key") || "";
     const googleModel = localStorage.getItem("google_tts_model") || "gemini-2.5-flash-preview-tts";
     const googleVoice = localStorage.getItem("google_tts_voice") || "Kore";
-    if (googleKey) headers["x-google-ai-key"] = googleKey;
-    headers["x-google-tts-model"] = googleModel;
-    headers["x-google-tts-voice"] = googleVoice;
+    if (googleKey) headers["x-gemini-api-key"] = googleKey;
+    headers["x-gemini-tts-model"] = googleModel;
+    headers["x-gemini-tts-voice"] = googleVoice;
     return headers;
   }
 

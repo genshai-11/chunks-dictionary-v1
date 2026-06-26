@@ -1070,9 +1070,10 @@ dictionaryRouter.post("/tts", async (req, res) => {
     const cleanText = text.trim();
 
     const ttsProvider = (req.headers["x-tts-provider"] as string) || "ninerouter";
-    const googleApiKey = (req.headers["x-google-ai-key"] as string) || "";
-    const googleTtsModel = (req.headers["x-google-tts-model"] as string) || "gemini-2.5-flash-preview-tts";
-    const googleTtsVoice = (req.headers["x-google-tts-voice"] as string) || "Kore";
+    // Prefer neutral x-gemini-* headers. Keep x-google-* fallback for older clients.
+    const googleApiKey = (req.headers["x-gemini-api-key"] as string) || (req.headers["x-google-ai-key"] as string) || "";
+    const googleTtsModel = (req.headers["x-gemini-tts-model"] as string) || (req.headers["x-google-tts-model"] as string) || "gemini-2.5-flash-preview-tts";
+    const googleTtsVoice = (req.headers["x-gemini-tts-voice"] as string) || (req.headers["x-google-tts-voice"] as string) || "Kore";
 
     // Check if custom 9Router config is provided in headers
     const nrUrl = req.headers["x-ninerouter-url"] as string;

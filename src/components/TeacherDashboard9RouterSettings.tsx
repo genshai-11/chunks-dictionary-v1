@@ -243,9 +243,9 @@ export default function TeacherDashboard9RouterSettings() {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (ttsProvider === "google-gemini") {
       headers["x-tts-provider"] = "google-gemini";
-      if (googleApiKey.trim()) headers["x-google-ai-key"] = googleApiKey.trim();
-      headers["x-google-tts-model"] = googleTtsModel.trim() || "gemini-2.5-flash-preview-tts";
-      headers["x-google-tts-voice"] = googleTtsVoice.trim() || "Kore";
+      if (googleApiKey.trim()) headers["x-gemini-api-key"] = googleApiKey.trim();
+      headers["x-gemini-tts-model"] = googleTtsModel.trim() || "gemini-2.5-flash-preview-tts";
+      headers["x-gemini-tts-voice"] = googleTtsVoice.trim() || "Kore";
       return headers;
     }
     if (endpoint.trim() && nrModel.trim()) {
