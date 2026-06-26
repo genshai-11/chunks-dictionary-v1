@@ -4,6 +4,7 @@ import { DictionaryEntry, ChunkColor } from "../types";
 import AudioPlayerButton from "./AudioPlayerButton";
 import { inferPosFromCategory } from "../lib/vocabularyMeta";
 import { buildTtsHeaders } from "../lib/ttsGateway";
+import { toAudioDataUrl } from "../lib/audioDataUrl";
 import { getVocabularyAudioUrl } from "../lib/audioMapping";
 
 const categoryColorMeta: Record<ChunkColor, { dot: string }> = {
@@ -292,7 +293,7 @@ export default function TeacherDashboardVocabulary({
           if (res.ok) {
             const data = await res.json();
             if (data && data.audio) {
-              const base64Audio = `data:audio/mp3;base64,${data.audio}`;
+              const base64Audio = toAudioDataUrl(data.audio, data.mimeType);
               const mockDuration = Math.max(1, Math.round(entry.en.length * 0.12));
               const newAudio = {
                 id: `ai-voice-en-${entry.en.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`,
@@ -328,7 +329,7 @@ export default function TeacherDashboardVocabulary({
           if (res.ok) {
             const data = await res.json();
             if (data && data.audio) {
-              const base64Audio = `data:audio/mp3;base64,${data.audio}`;
+              const base64Audio = toAudioDataUrl(data.audio, data.mimeType);
               const mockDuration = Math.max(1, Math.round(entry.vn.length * 0.15));
               const newAudio = {
                 id: `ai-voice-vi-${entry.vn.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`,
@@ -366,7 +367,7 @@ export default function TeacherDashboardVocabulary({
               if (res.ok) {
                 const data = await res.json();
                 if (data && data.audio) {
-                  const base64Audio = `data:audio/mp3;base64,${data.audio}`;
+                  const base64Audio = toAudioDataUrl(data.audio, data.mimeType);
                   updatedExamples.push({
                     ...ex,
                     audio_url: base64Audio

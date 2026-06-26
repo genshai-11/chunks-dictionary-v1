@@ -507,7 +507,26 @@ function localGenerateCodemix(en: string, vn: string) {
 }
 
 // Global cached TTS records to avoid repeatedly billing for the same text
-const ttsCache: { [key: string]: string } = {};
+const ttsCache: { [key: string]: { audio: string; mimeType: string } } = {};
+
+function encodeWavFromPcm16Mono(rawBase64: string, sampleRate = 24000): string {
+  const pcm = Buffer.from(rawBase64, "base64");
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0);
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write("WAVE", 8);
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20); // PCM
+  header.writeUInt16LE(1, 22); // mono
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(sampleRate * 2, 28); // byte rate: sampleRate * channels * bytes/sample
+  header.writeUInt16LE(2, 32); // block align
+  header.writeUInt16LE(16, 34); // bits per sample
+  header.write("data", 36);
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]).toString("base64");
+}
 
 // ==========================================
 // API ROUTES
@@ -1087,7 +1106,7 @@ dictionaryRouter.post("/tts", async (req, res) => {
         : `gemini-env:${cleanText}`;
 
     if (ttsCache[cacheKey]) {
-      return res.json({ audio: ttsCache[cacheKey] });
+      return res.json(ttsCache[cacheKey]);
     }
 
     if (ttsProvider === "google-gemini") {
@@ -1121,8 +1140,9 @@ dictionaryRouter.post("/tts", async (req, res) => {
 
       const googleBase64Audio = googleResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (googleBase64Audio) {
-        ttsCache[cacheKey] = googleBase64Audio;
-        return res.json({ audio: googleBase64Audio });
+        const wavAudio = encodeWavFromPcm16Mono(googleBase64Audio);
+        ttsCache[cacheKey] = { audio: wavAudio, mimeType: "audio/wav" };
+        return res.json(ttsCache[cacheKey]);
       }
 
       return res.status(500).json({ error: "Google Gemini TTS did not return audio." });
@@ -1152,8 +1172,8 @@ dictionaryRouter.post("/tts", async (req, res) => {
 
         const data: any = await nrResponse.json();
         if (data && data.audio) {
-          ttsCache[cacheKey] = data.audio;
-          return res.json({ audio: data.audio });
+          ttsCache[cacheKey] = { audio: data.audio, mimeType: data.mimeType || data.mime_type || "audio/mp3" };
+          return res.json(ttsCache[cacheKey]);
         } else {
           throw new Error("No audio property in 9Router response");
         }
@@ -1180,8 +1200,9 @@ dictionaryRouter.post("/tts", async (req, res) => {
 
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     if (base64Audio) {
-      ttsCache[cacheKey] = base64Audio;
-      res.json({ audio: base64Audio });
+      const wavAudio = encodeWavFromPcm16Mono(base64Audio);
+      ttsCache[cacheKey] = { audio: wavAudio, mimeType: "audio/wav" };
+      res.json(ttsCache[cacheKey]);
     } else {
       res.status(500).json({ error: "TTS generation failed to return audio stream." });
     }

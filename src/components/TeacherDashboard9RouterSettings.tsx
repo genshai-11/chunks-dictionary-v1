@@ -20,6 +20,7 @@ import {
   Sliders,
   Sparkles
 } from "lucide-react";
+import { toAudioDataUrl } from "../lib/audioDataUrl";
 
 export default function TeacherDashboard9RouterSettings() {
   // Settings states persisted to localStorage
@@ -280,7 +281,7 @@ export default function TeacherDashboard9RouterSettings() {
 
       const data = await response.json();
       if (data.audio) {
-        setSynthesizedAudio(`data:audio/mp3;base64,${data.audio}`);
+        setSynthesizedAudio(toAudioDataUrl(data.audio, data.mimeType));
       } else {
         throw new Error("API phản hồi không có luồng dữ liệu âm thanh.");
       }
@@ -341,7 +342,7 @@ export default function TeacherDashboard9RouterSettings() {
 
       const data = await response.json();
       if (data.audio) {
-        setSynthesizedAudioVi(`data:audio/mp3;base64,${data.audio}`);
+        setSynthesizedAudioVi(toAudioDataUrl(data.audio, data.mimeType));
       } else {
         throw new Error("API phản hồi không có luồng dữ liệu âm thanh.");
       }

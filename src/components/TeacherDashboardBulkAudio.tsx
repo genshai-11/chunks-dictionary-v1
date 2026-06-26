@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { DictionaryEntry, ChunkColor, ExampleItem, TeacherAudioItem } from "../types";
 import { buildTtsHeaders } from "../lib/ttsGateway";
+import { toAudioDataUrl } from "../lib/audioDataUrl";
 
 interface TeacherDashboardBulkAudioProps {
   entries: DictionaryEntry[];
@@ -284,7 +285,7 @@ export default function TeacherDashboardBulkAudio({
 
             const ttsData = await ttsResponse.json();
             if (ttsData && ttsData.audio) {
-              const base64Audio = `data:audio/mp3;base64,${ttsData.audio}`;
+              const base64Audio = toAudioDataUrl(ttsData.audio, ttsData.mimeType);
               const mockDuration = Math.max(1, Math.round(currentEntry.en.length * 0.12));
               const newAudio: TeacherAudioItem = {
                 id: `ai-voice-en-${currentEntry.en.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`,
@@ -319,7 +320,7 @@ export default function TeacherDashboardBulkAudio({
 
             const ttsDataVi = await ttsResponseVi.json();
             if (ttsDataVi && ttsDataVi.audio) {
-              const base64Audio = `data:audio/mp3;base64,${ttsDataVi.audio}`;
+              const base64Audio = toAudioDataUrl(ttsDataVi.audio, ttsDataVi.mimeType);
               const mockDuration = Math.max(1, Math.round(currentEntry.vn.length * 0.15));
               const newAudio: TeacherAudioItem = {
                 id: `ai-voice-vi-${currentEntry.vn.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`,
@@ -432,7 +433,7 @@ export default function TeacherDashboardBulkAudio({
             throw new Error("Dữ liệu Audio trả về trống.");
           }
 
-          const base64Audio = `data:audio/mp3;base64,${ttsData.audio}`;
+          const base64Audio = toAudioDataUrl(ttsData.audio, ttsData.mimeType);
 
           // Update this example item in the list
           const updatedExamples = currentEntry.examples.map((ex) => {

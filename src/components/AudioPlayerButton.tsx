@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { buildTtsHeaders } from "../lib/ttsGateway";
+import { toAudioDataUrl } from "../lib/audioDataUrl";
 import { Square, Volume2, Loader2 } from "lucide-react";
 
 interface AudioPlayerButtonProps {
@@ -118,7 +119,7 @@ export default function AudioPlayerButton({
 
       const data = await response.json();
       if (data.audio) {
-        const audioSrc = `data:audio/mp3;base64,${data.audio}`;
+        const audioSrc = toAudioDataUrl(data.audio, data.mimeType);
         const audio = new Audio(audioSrc);
         audio.playbackRate = currentSpeed;
         setAudioInstance(audio);
